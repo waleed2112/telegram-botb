@@ -25,9 +25,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         year = data.get("Year")
         rating = data.get("imdbRating")
         plot = data.get("Plot")
-
+        poster_url = data.get("Poster")  # رابط الصورة
+        
+        # الرد بالنص والصورة
         reply = f"🎬 *الاسم:* {title}\n📅 *السنة:* {year}\n⭐ *التقييم:* {rating}\n📝 *القصة:* {plot}"
         await update.message.reply_markdown(reply)
+        
+        if poster_url != "N/A":
+            # إرسال الصورة إذا كانت موجودة
+            await update.message.reply_photo(poster_url)
     else:
         await update.message.reply_text("لم أتمكن من العثور على هذا الفيلم أو المسلسل 😕")
 
