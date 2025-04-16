@@ -16,7 +16,7 @@ OMDB_API_KEY = 'aa7d3da9'
 
 # دالة لبدء التفاعل مع البوت
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply("مرحبًا! أرسل لي صورة أو فيديو لتحليل اسم الفيلم.")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="مرحبًا! أرسل لي صورة أو فيديو لتحليل اسم الفيلم.")
 
 # دالة لتحليل الصورة باستخدام Google Cloud Vision API
 async def analyze_image(image_path: str) -> str:
@@ -34,7 +34,7 @@ async def analyze_image(image_path: str) -> str:
 # دالة لمعالجة الصور والفيديوهات
 async def handle_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message.photo or update.message.video:
-        await update.message.reply("استلمت الصورة أو الفيديو، وجاري التحليل...")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="استلمت الصورة أو الفيديو، وجاري التحليل...")
 
         # جلب الصورة أو الفيديو من الرسالة
         file_id = update.message.photo[-1].file_id if update.message.photo else update.message.video.file_id
@@ -49,12 +49,12 @@ async def handle_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         labels = await analyze_image(image_path)
 
         # إرسال النتائج للمستخدم
-        await update.message.reply(f"تم العثور على التصنيفات التالية: {labels}")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"تم العثور على التصنيفات التالية: {labels}")
         
         # حذف الصورة المؤقتة
         os.remove(image_path)
     else:
-        await update.message.reply("لم أتمكن من التعرف على صورة أو فيديو.")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="لم أتمكن من التعرف على صورة أو فيديو.")
 
 # دالة لتشغيل البوت
 def main():
