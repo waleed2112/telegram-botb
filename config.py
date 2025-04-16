@@ -1,2 +1,5 @@
-BOT_TOKEN = "7614704758:AAGGv48BJqrzHJaUGWz4wQ2FL0iePS1HKxA"
-API_KEY = "f9711654-51d8-4bff-ae0d-8f40f832fa0f"
+# التوكن الخاص بالبوت
+BOT_TOKEN = '7614704758:AAGGv48BJqrzHJaUGWz4wQ2FL0iePS1HKxA'
+
+# مفتاح API الخاص بـ OMDb
+OMDB_API_KEY = 'aa7d3da9'
