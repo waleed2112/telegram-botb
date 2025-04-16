@@ -25,8 +25,11 @@ def handle_message(update, context):
         
         # استخراج المنصات (إذا كانت موجودة)
         platforms = response.get('Website', 'غير متوفر')
+        
+        # الحصول على رابط البوستر
+        poster_url = response.get("Poster", "")
 
-        # إنشاء الرد مع المنصات
+        # إنشاء الرد مع المنصات والصورة
         reply = f"""
 *العنوان:* {response['Title']}
 *السنة:* {response['Year']}
@@ -36,6 +39,13 @@ def handle_message(update, context):
 *المنصات:* {platforms}
 """
         update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+
+        # إرسال الصورة (بوستر الفيلم)
+        if poster_url:
+            update.message.reply_photo(poster_url)
+        else:
+            update.message.reply_text("لم أتمكن من العثور على صورة البوستر.")
+
     else:
         update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
 
