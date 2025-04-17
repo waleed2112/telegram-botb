@@ -36,4 +36,34 @@ async def movie_info(update: Update, context: CallbackContext) -> None:
         movie_details = f"اسم الفيلم/المسلسل: {data.get('Title')}\n" \
                         f"السنة: {data.get('Year')}\n" \
                         f"التصنيف: {data.get('Rated')}\n" \
-                        f"النوع: {data.get('Genre
+                        f"النوع: {data.get('Genre')}\n" \
+                        f"التقييم: {data.get('imdbRating')}\n" \
+                        f"الملخص: {data.get('Plot')}"
+        await update.message.reply_text(movie_details)
+    else:
+        await update.message.reply_text("لم أتمكن من العثور على معلومات للفيلم أو المسلسل الذي أرسلته.")
+
+# دالة لمعالجة الأخطاء
+def error(update: Update, context: CallbackContext) -> None:
+    logger.warning('قُوبل خطأ "%s" من قبل "%s"', context.error, update)
+
+# الوظيفة الرئيسية لإعداد البوت
+async def main():
+    application = Application.builder().token(BOT_TOKEN).build()
+
+    # إضافة معالج للأمر /start
+    application.add_handler(CommandHandler("start", start))
+
+    # إضافة معالج للأمر الذي يتعامل مع الفيلم أو المسلسل
+    application.add_handler(CommandHandler("movie", movie_info))
+
+    # إضافة معالج للأخطاء
+    application.add_error_handler(error)
+
+    # بدء تشغيل البوت
+    await application.run_polling()
+
+# تشغيل البوت
+if __name__ == '__main__':
+    import asyncio
+    asyncio.run(main())
