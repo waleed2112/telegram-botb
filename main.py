@@ -1,5 +1,6 @@
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ParseMode
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.constants import ParseMode
 import requests
 from googletrans import Translator
 
@@ -13,11 +14,11 @@ OMDB_API_KEY = 'aa7d3da9'
 translator = Translator()
 
 # دالة البداية
-def start(update, context):
-    update.message.reply_text("أرسل اسم فيلم أو مسلسل، وسأعطيك التفاصيل مع الترجمة 📽️")
+async def start(update: Update, context):
+    await update.message.reply_text("أرسل اسم فيلم أو مسلسل، وسأعطيك التفاصيل مع الترجمة 📽️")
 
 # دالة التعامل مع الرسائل
-def handle_message(update, context):
+async def handle_message(update: Update, context):
     title = update.message.text  # اسم الفيلم أو المسلسل من الرسالة
     url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
     
@@ -27,7 +28,7 @@ def handle_message(update, context):
     if response["Response"] == "True":
         # إرسال صورة متحركة (GIF) أولاً
         gif_url = "https://media.giphy.com/media/26BRrZv9lTG9NUsKI/giphy.gif"  # يمكنك تعديل الرابط حسب ما ترغب
-        update.message.reply_animation(gif_url)
+        await update.message.reply_animation(gif_url)
 
         # ترجمة القصة إلى العربية
         translated_plot = translator.translate(response["Plot"], dest='ar').text
@@ -42,23 +43,22 @@ def handle_message(update, context):
 *المنصات:* {response.get('Website', 'لا توجد بيانات عن المنصات')}
 """
         # إرسال تفاصيل الفيلم مع الترجمة
-        update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
     else:
         # في حالة عدم العثور على الفيلم
-        update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
+        await update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
 
 # الدالة الرئيسية لبدء البوت
-def main():
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
+async def main():
+    application = Application.builder().token(BOT_TOKEN).build()
 
     # إضافة المعالجات (Handlers)
-    dp.add_handler(CommandHandler("start", start))  # التعامل مع الأمر start
-    dp.add_handler(MessageHandler(Filters.text, handle_message))  # التعامل مع الرسائل النصية
+    application.add_handler(CommandHandler("start", start))  # التعامل مع الأمر start
+    application.add_handler(MessageHandler(filters.TEXT, handle_message))  # التعامل مع الرسائل النصية
 
     # بدء البوت
-    updater.start_polling()
-    updater.idle()
+    await application.run_polling()
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
