@@ -13,7 +13,7 @@ OMDB_API_KEY = 'aa7d3da9'
 SNAPCHAT_USERNAME = "xwn_4"
 SNAPCHAT_LINK = f"https://www.snapchat.com/add/{SNAPCHAT_USERNAME}"
 
-# قائمة أفلام "فيلم اليوم" مع اقتباسات متنوعة
+# قائمة أفلام "فيلم اليوم" مع اقتباسات
 movies_of_the_day = [
     {
         "title": "The Dark Knight",
@@ -44,8 +44,7 @@ movies_of_the_day = [
 
 # قاعدة بيانات النقاط
 user_points = {}
-# قاعدة بيانات التلميحات
-hints_given = {}
+user_hint = {}  # قاعدة بيانات التلميحات
 
 # دالة للبحث عن الأفلام
 def search_movie(update, context):
@@ -96,7 +95,6 @@ def check_answer(update, context):
     movie = context.user_data.get('movie_of_the_day')
     if movie:
         correct_answer = movie["correct_answer"]
-        movie_quote = movie["quote"]
         user_answer = update.message.text.strip()
 
         if user_answer.lower() == correct_answer.lower():
@@ -105,44 +103,32 @@ def check_answer(update, context):
             update.message.reply_text(f"مبروك {user}! لقد أجبت بشكل صحيح! 🎉\n"
                                       "لقد ربحت 10 نقاط! 🏅\n"
                                       f"مجموع نقاطك الآن: {user_points[user]}")
-            show_leaderboard(update)  # إظهار أعلى النقاط بعد الإجابة الصحيحة
         else:
-            # توفير تلميحات عند الإجابة الخاطئة
-            if user not in hints_given:
-                hints_given[user] = 0
-            if hints_given[user] < 3:
-                hints_given[user] += 1
-                hint = f"التلميح {hints_given[user]}: كلمة تبدأ بـ '{correct_answer[0]}'"
-                update.message.reply_text(f"للأسف، الإجابة خاطئة! {hint}")
-            else:
-                update.message.reply_text(f"للأسف، الإجابة خاطئة! الإجابة الصحيحة هي: {correct_answer}\n"
-                                          f"الاقتباس كان: *\"{movie_quote}\"*")
+            # تلميحات
+            if user not in user_hint:
+                user_hint[user] = {"attempts": 0, "hint": ""}
+            
+            user_hint[user]["attempts"] += 1
+            hint = correct_answer[:user_hint[user]["attempts"]]
+            user_hint[user]["hint"] = hint
+            update.message.reply_text(f"للأسف، الإجابة خاطئة! التلميح التالي: {hint}\n"
+                                      f"تلميحك الحالي: {user_hint[user]['hint']}")
+
     else:
         update.message.reply_text(f"لم يتم تقديم تحدي الاقتباس بعد. استخدم الأمر /f لتحدي اليوم.")
 
 # دالة لعرض أعلى النقاط
-def show_leaderboard(update):
+def leaderboard(update, context):
     if not user_points:
         update.message.reply_text("لا توجد نقاط حالياً. ابدأ بتخمين الاقتباسات للحصول على نقاط!")
         return
 
     sorted_users = sorted(user_points.items(), key=lambda x: x[1], reverse=True)
-    leaderboard_message = "*قائمة أفضل الناس الذين جاوبوا:*\n\n"
+    leaderboard_message = "*قائمة أعلى النقاط:*\n\n"
     for i, (user, points) in enumerate(sorted_users, 1):
         leaderboard_message += f"{i}. {user} - {points} نقاط\n"
 
     update.message.reply_text(leaderboard_message)
-
-# دالة لاقتراح أفلام أو مسلسلات جديدة
-def recommend_movies(update, context):
-    user = update.message.from_user.username
-    update.message.reply_text(f"مرحبًا {user}, إليك بعض الاقتراحات لأحدث الأفلام والمسلسلات:\n\n"
-                              "*1. The Last of Us*\n"
-                              "*2. Avatar: The Way of Water*\n"
-                              "*3. The Batman*\n"
-                              "*4. Stranger Things*\n"
-                              "*5. The Witcher*\n\n"
-                              "اختر فيلمًا أو مسلسلًا لمشاهدته، وشاركنا رأيك بعد المشاهدة!")
 
 # دالة لعرض "مشاهدة اليوم"
 def watch_today(update, context):
@@ -161,8 +147,10 @@ def start(update, context):
                               "/w - للحصول على فيلم اليوم لبدء مشاهدته وتقييمه.\n"
                               "/m <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.\n"
                               "/lb - لعرض قائمة أفضل الناس الذين جاوبوا.\n"
-                              "/r - لاقتراح أفلام ومسلسلات جديدة.\n"
-                              "لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+                              "/r - لاقتراح أفلام ومسلسلات جديدة.\n\n"
+                              "إذا كنت بحاجة للمساعدة أو تريد التواصل معي:\n"
+                              f"حسابي على التليجرام: @iLHwk\n"
+                              f"حسابي على السناب: {SNAPCHAT_LINK}")
 
 # الوظيفة الرئيسية للبوت
 def main():
@@ -171,10 +159,9 @@ def main():
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("f", movie_of_the_day))
-    dp.add_handler(CommandHandler("w", watch_today))  # إضافة هذه الدالة هنا
+    dp.add_handler(CommandHandler("w", watch_today))
     dp.add_handler(CommandHandler("m", search_movie))
-    dp.add_handler(CommandHandler("lb", show_leaderboard))
-    dp.add_handler(CommandHandler("r", recommend_movies))  # إضافة الأمر لاقتراح الأفلام
+    dp.add_handler(CommandHandler("lb", leaderboard))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_answer))
 
     updater.start_polling()
