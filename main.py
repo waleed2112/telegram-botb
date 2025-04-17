@@ -13,6 +13,9 @@ OMDB_API_KEY = 'aa7d3da9'
 SNAPCHAT_USERNAME = "XWN_4"
 SNAPCHAT_LINK = f"https://www.snapchat.com/add/{SNAPCHAT_USERNAME}"
 
+# رابط IPTV
+IPTV_API_URL = "http://u-max.co:2095/player_api.php?username=966550170674&password=37946180"
+
 translator = Translator()
 
 # دالة لبدء البوت
@@ -23,6 +26,18 @@ def start(update, context):
                               "/rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n\n"
                               "لمزيد من المعلومات، يمكنك إضافة حسابي على السناب: "
                               f"{SNAPCHAT_LINK}")
+
+# دالة للبحث في IPTV
+def search_iptv(query):
+    response = requests.get(IPTV_API_URL)
+    data = response.json()
+
+    # البحث في البيانات عن الأفلام أو المسلسلات
+    for item in data['movie_data']:
+        if query.lower() in item['name'].lower():
+            return item  # رجوع أول فيلم أو مسلسل تطابق مع الاسم
+
+    return None
 
 # دالة للبحث عن الأفلام حسب النوع
 def search_by_genre(update, context):
@@ -82,29 +97,39 @@ def top_rated(update, context):
 # دالة لمعالجة الرسائل
 def handle_message(update, context):
     title = update.message.text
-    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
-    response = requests.get(url).json()
+    # البحث في IPTV أولاً
+    iptv_result = search_iptv(title)
 
-    if response["Response"] == "True":
-        translated_plot = translator.translate(response["Plot"], dest='ar').text
-
-        reply = f"""
-*العنوان:* {response['Title']}
-*السنة:* {response['Year']}
-*التقييم:* {response['imdbRating']}
-*النوع:* {response['Genre']}
-*القصة:* {translated_plot}
-*رابط IMDb:* https://www.imdb.com/title/{response['imdbID']}/
-"""
-
-        poster_url = response.get("Poster", "")
-
-        if poster_url and poster_url != "N/A":
-            update.message.reply_photo(photo=poster_url, caption=reply, parse_mode=ParseMode.MARKDOWN)
-        else:
-            update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+    if iptv_result:
+        # إذا تم العثور على الفيلم في IPTV
+        movie_name = iptv_result["name"]
+        movie_link = iptv_result["stream_url"]
+        reply = f"العنوان: {movie_name}\n*رابط IPTV:* {movie_link}"
+        update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
     else:
-        update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
+        # إذا لم يتم العثور عليه في IPTV، البحث في IMDb
+        url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
+        response = requests.get(url).json()
+
+        if response["Response"] == "True":
+            translated_plot = translator.translate(response["Plot"], dest='ar').text
+
+            reply = f"""
+            العنوان: {response['Title']}
+            السنة: {response['Year']}
+            التقييم: {response['imdbRating']}
+            النوع: {response['Genre']}
+            القصة: {translated_plot}
+            رابط IMDb: https://www.imdb.com/title/{response['imdbID']}/
+            """
+
+            poster_url = response.get("Poster", "")
+            if poster_url and poster_url != "N/A":
+                update.message.reply_photo(photo=poster_url, caption=reply, parse_mode=ParseMode.MARKDOWN)
+            else:
+                update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+        else:
+            update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
 
 # دالة للمساعدة
 def help(update, context):
@@ -125,5 +150,4 @@ def main():
     updater.start_polling()
     updater.idle()
 
-if __name__ == "__main__":
-    main()
+if _name_ == "_main_":
