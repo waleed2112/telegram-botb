@@ -68,7 +68,7 @@ async def main():
     # بدء تشغيل البوت
     await application.run_polling()
 
-# تشغيل البوت
+# تشغيل البوت بدون استخدام asyncio.run
 if __name__ == '__main__':
     import asyncio
-    asyncio.run(main())
+    asyncio.get_event_loop().run_until_complete(main())
