@@ -76,7 +76,7 @@ def handle_message(update, context):
 
 # الوظيفة الرئيسية للبوت
 def main():
-    updater = Updater(BOT_TOKEN, use_context=True)  # تأكد من غلق القوس هنا
+    updater = Updater(BOT_TOKEN, use_context=True)  # تأكد من غلق القوس هنا بشكل صحيح
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
