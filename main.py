@@ -69,12 +69,24 @@ def search_movie_from_image(update, context):
     else:
         update.message.reply_text("يرجى إرسال صورة تحتوي على اسم الفيلم.")
 
+# دالة بدء البوت
+def start(update, context):
+    user = update.message.from_user.username
+    update.message.reply_text(f"مرحبًا {user}! أنا بوت الأفلام. استخدم الأوامر التالية:\n"
+                              "/f - للحصول على فيلم اليوم مع اقتباس لتخمينه.\n"
+                              "/w - للحصول على فيلم اليوم لبدء مشاهدته وتقييمه.\n"
+                              "/m <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.\n"
+                              "/lb - لعرض قائمة أفضل الناس الذين جاوبوا.\n"
+                              "/r - لاقتراح أفلام ومسلسلات جديدة.\n\n"
+                              "*للتواصل معي:* \n"
+                              "حسابي على التليجرام: https://t.me/iLHwk")
+
 # الوظيفة الرئيسية للبوت
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("start", start))  # تأكد من إضافة هذه السطر بعد تعريف الدالة
     dp.add_handler(MessageHandler(Filters.photo, search_movie_from_image))  # إضافة هذه الدالة لمعالجة الصور
 
     updater.start_polling()
