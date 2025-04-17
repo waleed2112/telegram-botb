@@ -76,4 +76,14 @@ def handle_message(update, context):
 
 # الوظيفة الرئيسية للبوت
 def main():
-    updater = Updater(B
+    updater = Updater(BOT_TOKEN, use_context=True)  # تأكد من غلق القوس هنا
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(MessageHandler(Filters.text, handle_message))
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
