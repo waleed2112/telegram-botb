@@ -106,10 +106,10 @@ def check_answer(update, context):
                 user_hint[user] = {"attempts": 0, "hint": ""}
             
             user_hint[user]["attempts"] += 1
-            hint = correct_answer[:user_hint[user]["attempts"]]
+            # التلميح يتكون من 3 حروف فقط
+            hint = correct_answer[:min(3, user_hint[user]["attempts"])]
             user_hint[user]["hint"] = hint
-            update.message.reply_text(f"للأسف، الإجابة خاطئة! التلميح التالي: {hint}\n"
-                                      f"تلميحك الحالي: {user_hint[user]['hint']}")
+            update.message.reply_text(f"للأسف، الإجابة خاطئة! التلميح التالي: {hint}")
 
     else:
         update.message.reply_text(f"لم يتم تقديم تحدي الاقتباس بعد. استخدم الأمر /f لتحدي اليوم.")
@@ -146,7 +146,7 @@ def start(update, context):
                               "/lb - لعرض قائمة أفضل الناس الذين جاوبوا.\n"
                               "/r - لاقتراح أفلام ومسلسلات جديدة.\n\n"
                               "*للتواصل معي:* \n"
-                              "حسابي على التليجرام: @iLHwk")
+                              "حسابي على السناب: https://www.snapchat.com/add/xwn_4")
 
 # دالة للمساعدة /help
 def help(update, context):
@@ -159,7 +159,7 @@ def help(update, context):
                               "/lb - لعرض قائمة أفضل الناس الذين جاوبوا.\n"
                               "/r - لاقتراح أفلام ومسلسلات جديدة.\n\n"
                               "*للتواصل معي:*\n"
-                              "حسابي على التليجرام: @iLHwk")
+                              "حسابي على السناب: https://www.snapchat.com/add/xwn_4")
 
 # الوظيفة الرئيسية للبوت
 def main():
