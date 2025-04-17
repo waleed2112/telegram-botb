@@ -21,7 +21,8 @@ def start(update, context):
                               "/top - للحصول على أفضل الأفلام أو المسلسلات\n"
                               "/genre <النوع> - للبحث عن أفلام حسب النوع\n"
                               "/rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n\n"
-                              f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+                              "لمزيد من المعلومات، يمكنك إضافة حسابي على السناب: "
+                              f"{SNAPCHAT_LINK}")
 
 # دالة للبحث عن الأفلام حسب النوع
 def search_by_genre(update, context):
@@ -105,6 +106,10 @@ def handle_message(update, context):
     else:
         update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
 
+# دالة للمساعدة
+def help(update, context):
+    update.message.reply_text(f"لمزيد من المعلومات، يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+
 # الوظيفة الرئيسية للبوت
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
@@ -114,6 +119,7 @@ def main():
     dp.add_handler(CommandHandler("top", top_rated))
     dp.add_handler(CommandHandler("genre", search_by_genre))
     dp.add_handler(CommandHandler("rating", search_by_rating))
+    dp.add_handler(CommandHandler("help", help))  # إضافة أمر /help للسناب
     dp.add_handler(MessageHandler(Filters.text, handle_message))
 
     updater.start_polling()
