@@ -3,12 +3,17 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext, Application
 import requests
 import os
+import pytz
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # التوكن الخاص بالبوت
 BOT_TOKEN = '7614704758:AAGGv48BJqrzHJaUGWz4wQ2FL0iePS1HKxA'
 
 # مفتاح API الخاص بـ OMDb
 OMDB_API_KEY = 'aa7d3da9'
+
+# تعيين المنطقة الزمنية
+timezone = pytz.timezone("Asia/Riyadh")  # اختر المنطقة الزمنية المناسبة
 
 # إعدادات التسجيل
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
