@@ -13,10 +13,11 @@ translator = Translator()
 
 # دالة لبدء البوت
 def start(update, context):
-    update.message.reply_text("أرسل اسم فيلم أو مسلسل، أو استخدم الأوامر التالية:\n"
-                              "/top_rated - للحصول على أفضل الأفلام أو المسلسلات\n"
+    update.message.reply_text("مرحباً! أرسل اسم فيلم أو مسلسل للحصول على التفاصيل. استخدم الأوامر التالية:\n"
+                              "/top_rated - للحصول على أفضل الأفلام\n"
                               "/search_by_genre <النوع> - للبحث عن أفلام حسب النوع\n"
-                              "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب")
+                              "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n"
+                              "/change_language <اللغة> - لتغيير لغة الترجمة")
 
 # دالة للبحث عن الأفلام حسب النوع
 def search_by_genre(update, context):
@@ -37,7 +38,12 @@ def search_by_genre(update, context):
 
 # دالة للبحث عن الأفلام حسب التقييم
 def search_by_rating(update, context):
-    rating_threshold = float(context.args[0]) if context.args else 8.0
+    try:
+        rating_threshold = float(context.args[0]) if context.args else 8.0
+    except ValueError:
+        update.message.reply_text("يرجى إدخال التقييم بشكل صحيح بعد الأمر مثل: /search_by_rating 7.5")
+        return
+
     url = f"http://www.omdbapi.com/?s=&apikey={OMDB_API_KEY}"
     response = requests.get(url).json()
 
@@ -62,14 +68,27 @@ def top_rated(update, context):
     else:
         update.message.reply_text("لم أتمكن من العثور على أفضل الأفلام أو المسلسلات.")
 
+# دالة لتغيير لغة الترجمة
+def change_language(update, context):
+    if context.args:
+        new_language = context.args[0]
+        if new_language in ['ar', 'en', 'fr', 'de']:  # لغات مدعومة
+            global language
+            language = new_language
+            update.message.reply_text(f"تم تغيير لغة الترجمة إلى: {new_language}")
+        else:
+            update.message.reply_text("اللغة غير مدعومة. يمكن استخدام: ar, en, fr, de.")
+    else:
+        update.message.reply_text("يرجى تحديد اللغة بعد الأمر مثل: /change_language ar")
+
 # دالة لمعالجة الرسائل
 def handle_message(update, context):
     title = update.message.text
-    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
+    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language={language}"
     response = requests.get(url).json()
 
     if response["Response"] == "True":
-        translated_plot = translator.translate(response["Plot"], dest='ar').text
+        translated_plot = translator.translate(response["Plot"], dest=language).text
 
         reply = f"""
 *العنوان:* {response['Title']}
@@ -97,10 +116,12 @@ def main():
     dp.add_handler(CommandHandler("top_rated", top_rated))
     dp.add_handler(CommandHandler("search_by_genre", search_by_genre))
     dp.add_handler(CommandHandler("search_by_rating", search_by_rating))
+    dp.add_handler(CommandHandler("change_language", change_language))
     dp.add_handler(MessageHandler(Filters.text, handle_message))
 
     updater.start_polling()
     updater.idle()
 
 if __name__ == "__main__":
+    language = 'ar'  # اللغة الافتراضية
     main()
