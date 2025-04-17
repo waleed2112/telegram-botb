@@ -9,25 +9,19 @@ BOT_TOKEN = '7614704758:AAHXU2ZPBrYXIusXuwbFCKFrCCHtoT8n-Do'
 # مفتاح OMDb API
 OMDB_API_KEY = 'aa7d3da9'
 
+# حساب السناب
+SNAPCHAT_USERNAME = "XWN_4"
+SNAPCHAT_LINK = f"https://www.snapchat.com/add/{SNAPCHAT_USERNAME}"
+
 translator = Translator()
 
 # دالة لبدء البوت
 def start(update, context):
     update.message.reply_text("أرسل اسم فيلم أو مسلسل، أو استخدم الأوامر التالية:\n"
-                              "/top - للحصول على أفضل الأفلام أو المسلسلات\n"
+                              "/top - أفضل الأفلام والمسلسلات\n"
                               "/genre <النوع> - للبحث عن أفلام حسب النوع\n"
-                              "/rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n"
-                              "استخدم الأمر /help للحصول على المزيد من التفاصيل.")
-
-# دالة للمساعدة
-def help(update, context):
-    SNAPCHAT_USERNAME = "XWN_4"
-    SNAPCHAT_LINK = f"https://www.snapchat.com/add/{SNAPCHAT_USERNAME}"
-    update.message.reply_text(f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}\n"
-                              "يمكنك استخدام الأوامر التالية:\n"
-                              "/top - للحصول على أفضل الأفلام أو المسلسلات\n"
-                              "/genre <النوع> - للبحث عن أفلام حسب النوع\n"
-                              "/rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب")
+                              "/rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n\n"
+                              "/help - للحصول على مزيد من المعلومات")
 
 # دالة للبحث عن الأفلام حسب النوع
 def search_by_genre(update, context):
@@ -75,7 +69,11 @@ def top_rated(update, context):
         else:
             update.message.reply_text("لم أتمكن من العثور على أفضل الأفلام أو المسلسلات.")
     else:
-        update.message.reply_text("لم أتمكن من العثور على أفلام أو مسلسلات بناءً على التقييم.")
+        update.message.reply_text("لم أتمكن من العثور على أفلام أو مسلسلات.")
+
+# دالة لعرض المعلومات حول البوت
+def help(update, context):
+    update.message.reply_text(f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
 
 # دالة لمعالجة الرسائل
 def handle_message(update, context):
@@ -99,3 +97,24 @@ def handle_message(update, context):
         if poster_url and poster_url != "N/A":
             update.message.reply_photo(photo=poster_url, caption=reply, parse_mode=ParseMode.MARKDOWN)
         else:
+            update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+    else:
+        update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
+
+# الوظيفة الرئيسية للبوت
+def main():
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("top", top_rated))
+    dp.add_handler(CommandHandler("genre", search_by_genre))
+    dp.add_handler(CommandHandler("rating", search_by_rating))
+    dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(MessageHandler(Filters.text, handle_message))
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
