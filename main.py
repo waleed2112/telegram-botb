@@ -9,10 +9,6 @@ BOT_TOKEN = '7614704758:AAHXU2ZPBrYXIusXuwbFCKFrCCHtoT8n-Do'
 # مفتاح OMDb API
 OMDB_API_KEY = 'aa7d3da9'
 
-# حساب السناب
-SNAPCHAT_USERNAME = "XWN_4"
-SNAPCHAT_LINK = f"https://www.snapchat.com/add/{SNAPCHAT_USERNAME}"
-
 translator = Translator()
 
 # دالة لبدء البوت
@@ -21,7 +17,17 @@ def start(update, context):
                               "/top_rated - للحصول على أفضل الأفلام أو المسلسلات\n"
                               "/search_by_genre <النوع> - للبحث عن أفلام حسب النوع\n"
                               "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n\n"
-                              f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+                              "استخدم الأمر /help للحصول على المزيد من التفاصيل.")
+
+# دالة للمساعدة
+def help(update, context):
+    SNAPCHAT_USERNAME = "XWN_4"
+    SNAPCHAT_LINK = f"https://www.snapchat.com/add/{SNAPCHAT_USERNAME}"
+    update.message.reply_text(f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}\n"
+                              "يمكنك استخدام الأوامر التالية:\n"
+                              "/top_rated - للحصول على أفضل الأفلام أو المسلسلات\n"
+                              "/search_by_genre <النوع> - للبحث عن أفلام حسب النوع\n"
+                              "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب")
 
 # دالة للبحث عن الأفلام حسب النوع
 def search_by_genre(update, context):
@@ -36,11 +42,9 @@ def search_by_genre(update, context):
     if response.get("Response") == "True":
         movies = response.get("Search", [])
         movie_list = "\n".join([f"{movie['Title']} ({movie['Year']})" for movie in movies])
-        update.message.reply_text(f"أفلام في نوع {genre}:\n{movie_list}\n\n"
-                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+        update.message.reply_text(f"أفلام في نوع {genre}:\n{movie_list}")
     else:
-        update.message.reply_text(f"لم أتمكن من العثور على أفلام من نوع {genre}\n\n"
-                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+        update.message.reply_text(f"لم أتمكن من العثور على أفلام من نوع {genre}")
 
 # دالة للبحث عن الأفلام حسب التقييم
 def search_by_rating(update, context):
@@ -52,11 +56,9 @@ def search_by_rating(update, context):
         movies = response.get("Search", [])
         top_rated_movies = [movie for movie in movies if float(movie['imdbRating']) >= rating_threshold]
         movie_list = "\n".join([f"{movie['Title']} ({movie['Year']}) - {movie['imdbRating']}" for movie in top_rated_movies])
-        update.message.reply_text(f"أفلام بتقييم أعلى من {rating_threshold}:\n{movie_list}\n\n"
-                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+        update.message.reply_text(f"أفلام بتقييم أعلى من {rating_threshold}:\n{movie_list}")
     else:
-        update.message.reply_text("لم أتمكن من العثور على أفلام بناءً على التقييم المحدد.\n\n"
-                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+        update.message.reply_text("لم أتمكن من العثور على أفلام بناءً على التقييم المحدد.")
 
 # دالة لعرض أفضل الأفلام أو المسلسلات
 def top_rated(update, context):
@@ -65,19 +67,15 @@ def top_rated(update, context):
 
     if response.get("Response") == "True":
         movies = response.get("Search", [])
-        # معالجة تصنيف الأفلام أو المسلسلات حسب التقييم (بترتيب تنازلي)
         top_movies = sorted(movies, key=lambda x: float(x['imdbRating']) if x['imdbRating'] != "N/A" else 0, reverse=True)[:5]
         
         if top_movies:
             movie_list = "\n".join([f"{movie['Title']} ({movie['Year']}) - {movie['imdbRating']}" for movie in top_movies])
-            update.message.reply_text(f"أفضل الأفلام أو المسلسلات:\n{movie_list}\n\n"
-                                      f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+            update.message.reply_text(f"أفضل الأفلام أو المسلسلات:\n{movie_list}")
         else:
-            update.message.reply_text("لم أتمكن من العثور على أفضل الأفلام أو المسلسلات.\n\n"
-                                      f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+            update.message.reply_text("لم أتمكن من العثور على أفضل الأفلام أو المسلسلات.")
     else:
-        update.message.reply_text("لم أتمكن من العثور على أفلام أو مسلسلات بناءً على التقييم.\n\n"
-                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+        update.message.reply_text("لم أتمكن من العثور على أفلام أو مسلسلات بناءً على التقييم.")
 
 # دالة لمعالجة الرسائل
 def handle_message(update, context):
@@ -102,11 +100,8 @@ def handle_message(update, context):
             update.message.reply_photo(photo=poster_url, caption=reply, parse_mode=ParseMode.MARKDOWN)
         else:
             update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
-
-        update.message.reply_text(f"\nلمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
     else:
-        update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.\n\n"
-                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+        update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
 
 # الوظيفة الرئيسية للبوت
 def main():
@@ -114,6 +109,7 @@ def main():
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("top_rated", top_rated))
     dp.add_handler(CommandHandler("search_by_genre", search_by_genre))
     dp.add_handler(CommandHandler("search_by_rating", search_by_rating))
