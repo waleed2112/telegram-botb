@@ -1,5 +1,5 @@
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from telegram import ParseMode
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 import requests
 from googletrans import Translator
 
@@ -20,8 +20,53 @@ def start(update, context):
     update.message.reply_text("أرسل اسم فيلم أو مسلسل، أو استخدم الأوامر التالية:\n"
                               "/top_rated - للحصول على أفضل الأفلام أو المسلسلات\n"
                               "/search_by_genre <النوع> - للبحث عن أفلام حسب النوع\n"
-                              "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n\n"
+                              "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n"
+                              "/challenge - لتحديات الأسبوع\n"
+                              "/recommend <النوع> - للحصول على أفلام في هذا النوع\n\n"
                               f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+
+# دالة لإنشاء استطلاع رأي
+def send_poll(update, context):
+    keyboard = [
+        [InlineKeyboardButton("نعم", callback_data='yes')],
+        [InlineKeyboardButton("لا", callback_data='no')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text("هل أعجبك هذا الفيلم؟", reply_markup=reply_markup)
+
+# دالة لعرض حالة الفيلم أو المسلسل
+def check_streaming(update, context):
+    title = update.message.text
+    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}"
+    response = requests.get(url).json()
+    
+    if response["Response"] == "True":
+        streaming_info = response.get("Streaming", "غير متوفر")
+        update.message.reply_text(f"الفيلم {title} يمكن مشاهدته على: {streaming_info}")
+    else:
+        update.message.reply_text("لم أتمكن من العثور على معلومات البث لهذا الفيلم.")
+
+# دالة لإضافة تحديات أسبوعية
+def weekly_challenge(update, context):
+    challenge_movies = [
+        "فيلم الأكشن لهذا الأسبوع: Mad Max Fury Road",
+        "فيلم الرعب لهذا الأسبوع: The Conjuring"
+    ]
+    challenge_list = "\n".join(challenge_movies)
+    update.message.reply_text(f"تحديات الأسبوع:\n{challenge_list}")
+
+# دالة لتقديم اقتراحات للأفلام بناءً على النوع
+def movie_recommendation(update, context):
+    genre = ' '.join(context.args)
+    url = f"http://www.omdbapi.com/?s=&genre={genre}&apikey={OMDB_API_KEY}"
+    response = requests.get(url).json()
+
+    if response.get("Response") == "True":
+        movies = response.get("Search", [])
+        movie_list = "\n".join([f"{movie['Title']} ({movie['Year']})" for movie in movies])
+        update.message.reply_text(f"أفلام في نوع {genre}:\n{movie_list}")
+    else:
+        update.message.reply_text("لم أتمكن من العثور على أفلام بهذا النوع.")
 
 # دالة للبحث عن الأفلام حسب النوع
 def search_by_genre(update, context):
@@ -65,7 +110,6 @@ def top_rated(update, context):
 
     if response.get("Response") == "True":
         movies = response.get("Search", [])
-        # معالجة تصنيف الأفلام أو المسلسلات حسب التقييم (بترتيب تنازلي)
         top_movies = sorted(movies, key=lambda x: float(x['imdbRating']) if x['imdbRating'] != "N/A" else 0, reverse=True)[:5]
         
         if top_movies:
@@ -103,6 +147,9 @@ def handle_message(update, context):
         else:
             update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
+        # إضافة استطلاع الرأي بعد عرض التفاصيل
+        send_poll(update, context)
+
         update.message.reply_text(f"\nلمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
     else:
         update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.\n\n"
@@ -117,10 +164,11 @@ def main():
     dp.add_handler(CommandHandler("top_rated", top_rated))
     dp.add_handler(CommandHandler("search_by_genre", search_by_genre))
     dp.add_handler(CommandHandler("search_by_rating", search_by_rating))
+    dp.add_handler(CommandHandler("challenge", weekly_challenge))  # تحديات أسبوعية
+    dp.add_handler(CommandHandler("recommend", movie_recommendation))  # اقتراحات للأفلام بناءً على النوع
     dp.add_handler(MessageHandler(Filters.text, handle_message))
+    dp.add_handler(MessageHandler(Filters.text, check_streaming))  # التحقق من البث
+    dp.add_handler(CallbackQueryHandler(send_poll))  # استطلاع رأي
 
     updater.start_polling()
-    updater.idle()
-
-if __name__ == "__main__":
-    main()
+    updater
