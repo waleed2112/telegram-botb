@@ -47,4 +47,33 @@ def handle_message(update, context):
     print("OMDb API Response:", response)
 
     if response["Response"] == "True":
-        translated_plot = translator.translate(response["Plot"], dest_
+        translated_plot = translator.translate(response["Plot"], dest='ar').text  # التأكد من غلق القوس
+
+        reply = f"""
+*العنوان:* {response['Title']}
+*السنة:* {response['Year']}
+*التقييم:* {response['imdbRating']}
+*النوع:* {response['Genre']}
+*القصة:* {translated_plot}
+"""
+
+        poster_url = response.get("Poster", "")
+        movie_link = get_movie_link(title)
+
+        # طباعة رابط الصورة ورابط المشاهدة
+        print("Poster URL:", poster_url)
+        print("Movie Link:", movie_link)
+
+        if poster_url and poster_url != "N/A":
+            update.message.reply_photo(photo=poster_url, caption=reply, parse_mode=ParseMode.MARKDOWN)
+        else:
+            update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+
+        update.message.reply_text(f"\nرابط المشاهدة: {movie_link}\n\nلمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+    else:
+        update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.\n\n"
+                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+
+# الوظيفة الرئيسية للبوت
+def main():
+    updater = Updater(B
