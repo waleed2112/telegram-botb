@@ -1,7 +1,13 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import ParseMode
 import requests
 from googletrans import Translator
+import logging
+
+# إعدادات التسجيل (Logging)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # التوكن الخاص بالبوت
 BOT_TOKEN = '7614704758:AAHXU2ZPBrYXIusXuwbFCKFrCCHtoT8n-Do'
@@ -20,53 +26,9 @@ def start(update, context):
     update.message.reply_text("أرسل اسم فيلم أو مسلسل، أو استخدم الأوامر التالية:\n"
                               "/top_rated - للحصول على أفضل الأفلام أو المسلسلات\n"
                               "/search_by_genre <النوع> - للبحث عن أفلام حسب النوع\n"
-                              "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n"
-                              "/challenge - لتحديات الأسبوع\n"
-                              "/recommend <النوع> - للحصول على أفلام في هذا النوع\n\n"
+                              "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n\n"
                               f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
-
-# دالة لإنشاء استطلاع رأي
-def send_poll(update, context):
-    keyboard = [
-        [InlineKeyboardButton("نعم", callback_data='yes')],
-        [InlineKeyboardButton("لا", callback_data='no')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text("هل أعجبك هذا الفيلم؟", reply_markup=reply_markup)
-
-# دالة لعرض حالة الفيلم أو المسلسل
-def check_streaming(update, context):
-    title = update.message.text
-    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}"
-    response = requests.get(url).json()
-    
-    if response["Response"] == "True":
-        streaming_info = response.get("Streaming", "غير متوفر")
-        update.message.reply_text(f"الفيلم {title} يمكن مشاهدته على: {streaming_info}")
-    else:
-        update.message.reply_text("لم أتمكن من العثور على معلومات البث لهذا الفيلم.")
-
-# دالة لإضافة تحديات أسبوعية
-def weekly_challenge(update, context):
-    challenge_movies = [
-        "فيلم الأكشن لهذا الأسبوع: Mad Max Fury Road",
-        "فيلم الرعب لهذا الأسبوع: The Conjuring"
-    ]
-    challenge_list = "\n".join(challenge_movies)
-    update.message.reply_text(f"تحديات الأسبوع:\n{challenge_list}")
-
-# دالة لتقديم اقتراحات للأفلام بناءً على النوع
-def movie_recommendation(update, context):
-    genre = ' '.join(context.args)
-    url = f"http://www.omdbapi.com/?s=&genre={genre}&apikey={OMDB_API_KEY}"
-    response = requests.get(url).json()
-
-    if response.get("Response") == "True":
-        movies = response.get("Search", [])
-        movie_list = "\n".join([f"{movie['Title']} ({movie['Year']})" for movie in movies])
-        update.message.reply_text(f"أفلام في نوع {genre}:\n{movie_list}")
-    else:
-        update.message.reply_text("لم أتمكن من العثور على أفلام بهذا النوع.")
+    logger.info("Bot started successfully.")
 
 # دالة للبحث عن الأفلام حسب النوع
 def search_by_genre(update, context):
@@ -86,6 +48,7 @@ def search_by_genre(update, context):
     else:
         update.message.reply_text(f"لم أتمكن من العثور على أفلام من نوع {genre}\n\n"
                                   f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+    logger.info(f"Search by genre: {genre}")
 
 # دالة للبحث عن الأفلام حسب التقييم
 def search_by_rating(update, context):
@@ -102,6 +65,7 @@ def search_by_rating(update, context):
     else:
         update.message.reply_text("لم أتمكن من العثور على أفلام بناءً على التقييم المحدد.\n\n"
                                   f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+    logger.info(f"Search by rating: {rating_threshold}")
 
 # دالة لعرض أفضل الأفلام أو المسلسلات
 def top_rated(update, context):
@@ -122,6 +86,7 @@ def top_rated(update, context):
     else:
         update.message.reply_text("لم أتمكن من العثور على أفلام أو مسلسلات بناءً على التقييم.\n\n"
                                   f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+    logger.info("Top rated movies fetched.")
 
 # دالة لمعالجة الرسائل
 def handle_message(update, context):
@@ -147,13 +112,11 @@ def handle_message(update, context):
         else:
             update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
-        # إضافة استطلاع الرأي بعد عرض التفاصيل
-        send_poll(update, context)
-
         update.message.reply_text(f"\nلمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
     else:
         update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.\n\n"
                                   f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+    logger.info(f"Movie or series searched: {title}")
 
 # الوظيفة الرئيسية للبوت
 def main():
@@ -164,11 +127,11 @@ def main():
     dp.add_handler(CommandHandler("top_rated", top_rated))
     dp.add_handler(CommandHandler("search_by_genre", search_by_genre))
     dp.add_handler(CommandHandler("search_by_rating", search_by_rating))
-    dp.add_handler(CommandHandler("challenge", weekly_challenge))  # تحديات أسبوعية
-    dp.add_handler(CommandHandler("recommend", movie_recommendation))  # اقتراحات للأفلام بناءً على النوع
     dp.add_handler(MessageHandler(Filters.text, handle_message))
-    dp.add_handler(MessageHandler(Filters.text, check_streaming))  # التحقق من البث
-    dp.add_handler(CallbackQueryHandler(send_poll))  # استطلاع رأي
 
     updater.start_polling()
-    updater
+    logger.info("Bot is polling.")
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
