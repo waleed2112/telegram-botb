@@ -14,9 +14,9 @@ translator = Translator()
 # دالة لبدء البوت
 def start(update, context):
     update.message.reply_text("أرسل اسم فيلم أو مسلسل، أو استخدم الأوامر التالية:\n"
-                              "/top_rated - للحصول على أفضل الأفلام أو المسلسلات\n"
-                              "/search_by_genre <النوع> - للبحث عن أفلام حسب النوع\n"
-                              "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n\n"
+                              "/top - للحصول على أفضل الأفلام أو المسلسلات\n"
+                              "/genre <النوع> - للبحث عن أفلام حسب النوع\n"
+                              "/rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n"
                               "استخدم الأمر /help للحصول على المزيد من التفاصيل.")
 
 # دالة للمساعدة
@@ -25,15 +25,15 @@ def help(update, context):
     SNAPCHAT_LINK = f"https://www.snapchat.com/add/{SNAPCHAT_USERNAME}"
     update.message.reply_text(f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}\n"
                               "يمكنك استخدام الأوامر التالية:\n"
-                              "/top_rated - للحصول على أفضل الأفلام أو المسلسلات\n"
-                              "/search_by_genre <النوع> - للبحث عن أفلام حسب النوع\n"
-                              "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب")
+                              "/top - للحصول على أفضل الأفلام أو المسلسلات\n"
+                              "/genre <النوع> - للبحث عن أفلام حسب النوع\n"
+                              "/rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب")
 
 # دالة للبحث عن الأفلام حسب النوع
 def search_by_genre(update, context):
     genre = ' '.join(context.args)
     if not genre:
-        update.message.reply_text("يرجى إدخال النوع بعد الأمر مثل: /search_by_genre أكشن")
+        update.message.reply_text("يرجى إدخال النوع بعد الأمر مثل: /genre أكشن")
         return
 
     url = f"http://www.omdbapi.com/?s=&genre={genre}&apikey={OMDB_API_KEY}"
@@ -99,24 +99,3 @@ def handle_message(update, context):
         if poster_url and poster_url != "N/A":
             update.message.reply_photo(photo=poster_url, caption=reply, parse_mode=ParseMode.MARKDOWN)
         else:
-            update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
-    else:
-        update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
-
-# الوظيفة الرئيسية للبوت
-def main():
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
-
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("top_rated", top_rated))
-    dp.add_handler(CommandHandler("search_by_genre", search_by_genre))
-    dp.add_handler(CommandHandler("search_by_rating", search_by_rating))
-    dp.add_handler(MessageHandler(Filters.text, handle_message))
-
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == "__main__":
-    main()
