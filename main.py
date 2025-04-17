@@ -51,8 +51,7 @@ def search_movie(update, context):
     title = ' '.join(context.args)
     user = update.message.from_user.username
     if not title:
-        update.message.reply_text(f"مرحبًا {user}, يرجى إدخال اسم الفيلم أو المسلسل مثل: /m The Dark Knight\n\n"
-                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+        update.message.reply_text(f"مرحبًا {user}, يرجى إدخال اسم الفيلم أو المسلسل مثل: /m The Dark Knight")
         return
 
     url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
@@ -72,8 +71,7 @@ def search_movie(update, context):
         else:
             update.message.reply_text(movie_info, parse_mode=ParseMode.MARKDOWN)
     else:
-        update.message.reply_text(f"لم أتمكن من العثور على هذا الفيلم أو المسلسل. تأكد من الكتابة الصحيحة، {user}.\n\n"
-                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+        update.message.reply_text(f"لم أتمكن من العثور على هذا الفيلم أو المسلسل. تأكد من الكتابة الصحيحة، {user}.")
 
 # دالة لعرض "فيلم اليوم" مع اقتباس عشوائي
 def movie_of_the_day(update, context):
@@ -83,8 +81,7 @@ def movie_of_the_day(update, context):
     user = update.message.from_user.username
     update.message.reply_text(f"مرحبًا {user}, فيلم اليوم هو: *{movie_title}*\n\n"
                               f"اقتباس من الفيلم: \n\n*\"{movie_quote}\"*\n\n"
-                              "هل يمكنك تخمين من قال هذا الاقتباس؟ اكتب إجابتك!\n\n"
-                              f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+                              "هل يمكنك تخمين من قال هذا الاقتباس؟ اكتب إجابتك!")
     
     # حفظ الفيلم والاقتباس في السياق لمقارنة الإجابة لاحقًا
     context.user_data['movie_of_the_day'] = movie
@@ -148,9 +145,21 @@ def start(update, context):
                               "/m <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.\n"
                               "/lb - لعرض قائمة أفضل الناس الذين جاوبوا.\n"
                               "/r - لاقتراح أفلام ومسلسلات جديدة.\n\n"
-                              "إذا كنت بحاجة للمساعدة أو تريد التواصل معي:\n"
-                              f"حسابي على التليجرام: @iLHwk\n"
-                              f"حسابي على السناب: {SNAPCHAT_LINK}")
+                              "*للتواصل معي:* \n"
+                              "حسابي على التليجرام: @iLHwk")
+
+# دالة للمساعدة /help
+def help(update, context):
+    user = update.message.from_user.username
+    update.message.reply_text(f"مرحبًا {user}!\n\n"
+                              "هذه قائمة بالأوامر التي يمكنك استخدامها:\n\n"
+                              "/f - للحصول على فيلم اليوم مع اقتباس لتخمينه.\n"
+                              "/w - للحصول على فيلم اليوم لبدء مشاهدته وتقييمه.\n"
+                              "/m <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.\n"
+                              "/lb - لعرض قائمة أفضل الناس الذين جاوبوا.\n"
+                              "/r - لاقتراح أفلام ومسلسلات جديدة.\n\n"
+                              "*للتواصل معي:*\n"
+                              "حسابي على التليجرام: @iLHwk")
 
 # الوظيفة الرئيسية للبوت
 def main():
@@ -162,6 +171,7 @@ def main():
     dp.add_handler(CommandHandler("w", watch_today))
     dp.add_handler(CommandHandler("m", search_movie))
     dp.add_handler(CommandHandler("lb", leaderboard))
+    dp.add_handler(CommandHandler("help", help))  # إضافة /help هنا
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_answer))
 
     updater.start_polling()
