@@ -2,13 +2,16 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 import random
 import requests
-import json
 
 # التوكن الخاص بالبوت
 BOT_TOKEN = '7614704758:AAHXU2ZPBrYXIusXuwbFCKFrCCHtoT8n-Do'
 
 # مفتاح OMDb API
 OMDB_API_KEY = 'aa7d3da9'
+
+# حساب السناب
+SNAPCHAT_USERNAME = "xwn_4"
+SNAPCHAT_LINK = f"https://www.snapchat.com/add/{SNAPCHAT_USERNAME}"
 
 # قائمة أفلام "فيلم اليوم" مع اقتباسات
 movies_of_the_day = [
@@ -43,7 +46,7 @@ movies_of_the_day = [
 def search_movie(update, context):
     title = ' '.join(context.args)
     if not title:
-        update.message.reply_text("يرجى إدخال اسم الفيلم أو المسلسل بعد الأمر مثل: /search_movie The Dark Knight")
+        update.message.reply_text("يرجى إدخال اسم الفيلم أو المسلسل مثل: /m The Dark Knight")
         return
 
     url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
@@ -65,14 +68,15 @@ def search_movie(update, context):
     else:
         update.message.reply_text("لم أتمكن من العثور على هذا الفيلم أو المسلسل. تأكد من الكتابة الصحيحة.")
 
-# دالة لعرض "فيلم اليوم" مع اقتباس
+# دالة لعرض "فيلم اليوم" مع اقتباس عشوائي
 def movie_of_the_day(update, context):
     movie = random.choice(movies_of_the_day)  # اختيار فيلم عشوائي من القائمة
     movie_title = movie["title"]
     movie_quote = movie["quote"]
     update.message.reply_text(f"فيلم اليوم هو: *{movie_title}*\n\n"
                               f"اقتباس من الفيلم: \n\n*\"{movie_quote}\"*\n\n"
-                              "هل يمكنك تخمين من قال هذا الاقتباس؟ اكتب إجابتك!")
+                              "هل يمكنك تخمين من قال هذا الاقتباس؟ اكتب إجابتك!\n\n"
+                              f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
     
     # حفظ الفيلم والاقتباس في السياق لمقارنة الإجابة لاحقًا
     context.user_data['movie_of_the_day'] = movie
@@ -91,7 +95,7 @@ def check_answer(update, context):
         else:
             update.message.reply_text(f"للأسف، الإجابة خاطئة! الإجابة الصحيحة هي: {correct_answer}")
     else:
-        update.message.reply_text("لم يتم تقديم تحدي الاقتباس بعد. استخدم الأمر /movie_of_the_day لتحدي اليوم.")
+        update.message.reply_text("لم يتم تقديم تحدي الاقتباس بعد. استخدم الأمر /f لتحدي اليوم.")
 
 # دالة لعرض "مشاهدة اليوم"
 def watch_today(update, context):
@@ -104,9 +108,9 @@ def watch_today(update, context):
 # دالة لبدء البوت
 def start(update, context):
     update.message.reply_text("مرحبًا! أنا بوت الأفلام. استخدم الأوامر التالية:\n"
-                              "/movie_of_the_day - للحصول على فيلم اليوم مع اقتباس لتخمينه.\n"
-                              "/watch_today - للحصول على فيلم اليوم لبدء مشاهدته وتقييمه.\n"
-                              "/search_movie <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.")
+                              "/f - للحصول على فيلم اليوم مع اقتباس لتخمينه.\n"
+                              "/w - للحصول على فيلم اليوم لبدء مشاهدته وتقييمه.\n"
+                              "/m <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.")
 
 # الوظيفة الرئيسية للبوت
 def main():
@@ -114,9 +118,9 @@ def main():
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("movie_of_the_day", movie_of_the_day))
-    dp.add_handler(CommandHandler("watch_today", watch_today))
-    dp.add_handler(CommandHandler("search_movie", search_movie))
+    dp.add_handler(CommandHandler("f", movie_of_the_day))
+    dp.add_handler(CommandHandler("w", watch_today))
+    dp.add_handler(CommandHandler("m", search_movie))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_answer))
 
     updater.start_polling()
