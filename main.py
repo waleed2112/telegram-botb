@@ -1,64 +1,53 @@
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
-from telegram.constants import ParseMode
+from telegram.ext import Application, CommandHandler, ContextTypes
 import requests
-from googletrans import Translator
+from dotenv import load_dotenv
+import os
+
+# تحميل القيم من ملف .env
+load_dotenv()
 
 # التوكن الخاص بالبوت
-BOT_TOKEN = '7614704758:AAGGv48BJqrzHJaUGWz4wQ2FL0iePS1HKxA'
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 
-# مفتاح OMDb API
-OMDB_API_KEY = 'aa7d3da9'
+# مفتاح API الخاص بـ OMDb
+OMDB_API_KEY = os.getenv('OMDB_API_KEY')
 
-# إعداد الترجمة
-translator = Translator()
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """إرسال رسالة ترحيبية عند بدء التفاعل مع البوت"""
+    await update.message.reply_text('مرحباً! أنا بوت يتعرف على الأفلام والمسلسلات.')
 
-# دالة البداية
-async def start(update: Update, context):
-    await update.message.reply_text("أرسل اسم فيلم أو مسلسل، وسأعطيك التفاصيل مع الترجمة 📽️")
-
-# دالة التعامل مع الرسائل
-async def handle_message(update: Update, context):
-    title = update.message.text  # اسم الفيلم أو المسلسل من الرسالة
-    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
+async def get_movie_info(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """إرجاع معلومات الفيلم أو المسلسل"""
+    movie_name = ' '.join(context.args)
+    if not movie_name:
+        await update.message.reply_text('يرجى إرسال اسم الفيلم أو المسلسل.')
+        return
     
-    # طلب بيانات الفيلم من OMDb API
-    response = requests.get(url).json()
+    url = f"http://www.omdbapi.com/?t={movie_name}&apikey={OMDB_API_KEY}"
+    response = requests.get(url)
+    data = response.json()
 
-    if response["Response"] == "True":
-        # إرسال صورة متحركة (GIF) أولاً
-        gif_url = "https://media.giphy.com/media/26BRrZv9lTG9NUsKI/giphy.gif"  # يمكنك تعديل الرابط حسب ما ترغب
-        await update.message.reply_animation(gif_url)
-
-        # ترجمة القصة إلى العربية
-        translated_plot = translator.translate(response["Plot"], dest='ar').text
-
-        # إعداد البيانات التي سيتم إرسالها
-        reply = f"""
-*العنوان:* {response['Title']}
-*السنة:* {response['Year']}
-*التقييم:* {response['imdbRating']}
-*النوع:* {response['Genre']}
-*القصة:* {translated_plot}
-*المنصات:* {response.get('Website', 'لا توجد بيانات عن المنصات')}
-"""
-        # إرسال تفاصيل الفيلم مع الترجمة
-        await update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+    if data['Response'] == 'True':
+        movie_info = f"اسم الفيلم: {data['Title']}\n"
+        movie_info += f"السنة: {data['Year']}\n"
+        movie_info += f"التقييم: {data['imdbRating']}\n"
+        movie_info += f"النوع: {data['Genre']}\n"
+        movie_info += f"الوصف: {data['Plot']}"
+        await update.message.reply_text(movie_info)
     else:
-        # في حالة عدم العثور على الفيلم
-        await update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
+        await update.message.reply_text(f"لم يتم العثور على فيلم باسم {movie_name}.")
 
-# الدالة الرئيسية لبدء البوت
-async def main():
+async def main() -> None:
+    """تشغيل البوت"""
     application = Application.builder().token(BOT_TOKEN).build()
 
-    # إضافة المعالجات (Handlers)
-    application.add_handler(CommandHandler("start", start))  # التعامل مع الأمر start
-    application.add_handler(MessageHandler(filters.TEXT, handle_message))  # التعامل مع الرسائل النصية
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("movie", get_movie_info))
 
-    # بدء البوت
+    # بدء تشغيل البوت
     await application.run_polling()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import asyncio
     asyncio.run(main())
