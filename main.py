@@ -1,77 +1,53 @@
-import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackContext
+from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
+from telegram import ParseMode
 import requests
-import pytz
-import nest_asyncio
-
-# تطبيق nest_asyncio
-nest_asyncio.apply()
+from googletrans import Translator
 
 # التوكن الخاص بالبوت
 BOT_TOKEN = '7614704758:AAGGv48BJqrzHJaUGWz4wQ2FL0iePS1HKxA'
 
-# مفتاح API الخاص بـ OMDb
+# مفتاح OMDb API
 OMDB_API_KEY = 'aa7d3da9'
 
-# تعيين المنطقة الزمنية
-timezone = pytz.timezone("Asia/Riyadh")
+translator = Translator()
 
-# إعدادات التسجيل
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-logger = logging.getLogger(__name__)
+def start(update, context):
+    update.message.reply_text("أرسل اسم فيلم أو مسلسل، وسأعطيك التفاصيل مع الترجمة 📽️")
 
-# دالة لمعالجة الأمر /start
-async def start(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('مرحباً! أرسل اسم الفيلم أو المسلسل للحصول على التقييم.')
+def handle_message(update, context):
+    title = update.message.text
+    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
+    response = requests.get(url).json()
 
-# دالة لمعالجة الطلبات المرتبطة بالأفلام أو المسلسلات
-async def movie_info(update: Update, context: CallbackContext) -> None:
-    movie_name = ' '.join(context.args)
-    if not movie_name:
-        await update.message.reply_text("يرجى إدخال اسم الفيلم أو المسلسل بعد الأمر.")
-        return
+    if response["Response"] == "True":
+        translated_plot = translator.translate(response["Plot"], dest='ar').text
 
-    # الاتصال بـ OMDb API للحصول على معلومات الفيلم أو المسلسل
-    url = f"http://www.omdbapi.com/?t={movie_name}&apikey={OMDB_API_KEY}"
-    response = requests.get(url)
-    data = response.json()
+        reply = f"""
+*العنوان:* {response['Title']}
+*السنة:* {response['Year']}
+*التقييم:* {response['imdbRating']}
+*النوع:* {response['Genre']}
+*القصة:* {translated_plot}
+"""
 
-    if data.get("Response") == "True":
-        # استخراج البيانات من الاستجابة
-        title = data.get('Title')
-        year = data.get('Year')
-        rated = data.get('Rated')
-        genre = data.get('Genre')
-        imdb_rating = data.get('imdbRating')
-        plot = data.get('Plot')
-        poster_url = data.get('Poster')
+        poster_url = response.get("Poster", "")
 
-        # إرسال المعلومات للمستخدم
-        movie_details = f"اسم الفيلم/المسلسل: {title}\n" \
-                        f"السنة: {year}\n" \
-                        f"التصنيف: {rated}\n" \
-                        f"النوع: {genre}\n" \
-                        f"التقييم: {imdb_rating}\n" \
-                        f"الملخص: {plot}"
-
-        # إرسال النص
-        await update.message.reply_text(movie_details)
-
-        # إرسال الصورة إذا كانت موجودة
-        if poster_url and poster_url != 'N/A':
-            await update.message.reply_photo(poster_url)
-
+        if poster_url and poster_url != "N/A":
+            update.message.reply_photo(photo=poster_url, caption=reply, parse_mode=ParseMode.MARKDOWN)
+        else:
+            update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
     else:
-        await update.message.reply_text("لم أتمكن من العثور على معلومات للفيلم أو المسلسل الذي أرسلته.")
+        update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
 
-# دالة لمعالجة الأخطاء
-def error(update: Update, context: CallbackContext) -> None:
-    logger.warning('قُوبل خطأ "%s" من قبل "%s"', context.error, update)
+def main():
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
 
-# الوظيفة الرئيسية لإعداد البوت
-async def main():
-    application = Application.builder().token(BOT_TOKEN).build()
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(MessageHandler(Filters.text, handle_message))
 
-    # إضافة معالج للأمر /start
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
