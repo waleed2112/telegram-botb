@@ -1,53 +1,56 @@
+import logging
+import requests
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
-import requests
-from dotenv import load_dotenv
-import os
-
-# تحميل القيم من ملف .env
-load_dotenv()
+from telegram.ext import MessageHandler, filters
+import asyncio
 
 # التوكن الخاص بالبوت
-BOT_TOKEN = os.getenv('BOT_TOKEN')
+BOT_TOKEN = '7614704758:AAGGv48BJqrzHJaUGWz4wQ2FL0iePS1HKxA'
 
 # مفتاح API الخاص بـ OMDb
-OMDB_API_KEY = os.getenv('OMDB_API_KEY')
+OMDB_API_KEY = 'aa7d3da9'
 
+# إعدادات تسجيل الأخطاء
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# دالة للتعامل مع الأمر /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """إرسال رسالة ترحيبية عند بدء التفاعل مع البوت"""
-    await update.message.reply_text('مرحباً! أنا بوت يتعرف على الأفلام والمسلسلات.')
+    user = update.effective_user
+    await update.message.reply(f"مرحبًا {user.first_name}! أنا بوت تلغرام يمكنني مساعدتك في العثور على معلومات حول الأفلام والمسلسلات.")
 
-async def get_movie_info(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """إرجاع معلومات الفيلم أو المسلسل"""
+# دالة للتعامل مع تحليل الأفلام باستخدام OMDb API
+async def fetch_movie_details(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     movie_name = ' '.join(context.args)
+    
     if not movie_name:
-        await update.message.reply_text('يرجى إرسال اسم الفيلم أو المسلسل.')
+        await update.message.reply("من فضلك، أرسل اسم الفيلم أو المسلسل الذي تريد معرفة تفاصيله.")
         return
     
-    url = f"http://www.omdbapi.com/?t={movie_name}&apikey={OMDB_API_KEY}"
-    response = requests.get(url)
+    # إرسال طلب إلى OMDb API
+    response = requests.get(f'http://www.omdbapi.com/?t={movie_name}&apikey={OMDB_API_KEY}')
     data = response.json()
 
-    if data['Response'] == 'True':
-        movie_info = f"اسم الفيلم: {data['Title']}\n"
-        movie_info += f"السنة: {data['Year']}\n"
-        movie_info += f"التقييم: {data['imdbRating']}\n"
-        movie_info += f"النوع: {data['Genre']}\n"
-        movie_info += f"الوصف: {data['Plot']}"
-        await update.message.reply_text(movie_info)
-    else:
-        await update.message.reply_text(f"لم يتم العثور على فيلم باسم {movie_name}.")
+    if data.get('Response') == 'True':
+        # عرض تفاصيل الفيلم أو المسلسل
+        title = data.get('Title')
+        year = data.get('Year')
+        genre = data.get('Genre')
+        plot = data.get('Plot')
+        rating = data.get('imdbRating')
 
+        await update.message.reply(f"🎬 {title} ({year})\n"
+                                   f"النوع: {genre}\n"
+                                   f"التقييم: {rating}/10\n"
+                                   f"القصة: {plot}")
+    else:
+        await update.message.reply(f"لم أتمكن من العثور على معلومات حول {movie_name}. حاول اسم مختلف.")
+
+# الدالة الرئيسية لبدء البوت
 async def main() -> None:
-    """تشغيل البوت"""
     application = Application.builder().token(BOT_TOKEN).build()
 
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("movie", get_movie_info))
-
-    # بدء تشغيل البوت
-    await application.run_polling()
-
-if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    # إضافة معالج للرد على الأمر /start
+    application.add_handler(CommandHandler_
