@@ -29,9 +29,9 @@ def analyze_image(image_path):
     response = client.text_detection(image=image)
     texts = response.text_annotations
 
+    # طباعة النصوص المستخرجة لتحديد ما إذا كان يتم استخراج النص الصحيح
     if texts:
-        # العودة إلى أول نتيجة (أعلى نص مستخرج)
-        return texts[0].description
+        return texts[0].description  # العودة إلى أول نتيجة (أعلى نص مستخرج)
     return None
 
 # دالة للبحث عن الأفلام بناءً على صورة
@@ -45,6 +45,8 @@ def search_movie_from_image(update, context):
         movie_name = analyze_image('user_image.jpg')
 
         if movie_name:
+            update.message.reply_text(f"تم استخراج النص من الصورة: {movie_name}")  # عرض النص المستخرج للتأكد
+
             # البحث عن الفيلم باستخدام OMDb API
             url = f"http://www.omdbapi.com/?t={movie_name}&apikey={OMDB_API_KEY}&plot=full&language=en"
             response = requests.get(url).json()
