@@ -1,10 +1,12 @@
 import logging
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext, Application
+from telegram.ext import Application, CommandHandler, CallbackContext
 import requests
-import os
 import pytz
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import nest_asyncio
+
+# تطبيق nest_asyncio
+nest_asyncio.apply()
 
 # التوكن الخاص بالبوت
 BOT_TOKEN = '7614704758:AAGGv48BJqrzHJaUGWz4wQ2FL0iePS1HKxA'
@@ -13,7 +15,7 @@ BOT_TOKEN = '7614704758:AAGGv48BJqrzHJaUGWz4wQ2FL0iePS1HKxA'
 OMDB_API_KEY = 'aa7d3da9'
 
 # تعيين المنطقة الزمنية
-timezone = pytz.timezone("Asia/Riyadh")  # اختر المنطقة الزمنية المناسبة
+timezone = pytz.timezone("Asia/Riyadh")
 
 # إعدادات التسجيل
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
