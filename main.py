@@ -4,7 +4,7 @@ import requests
 from googletrans import Translator
 
 # التوكن الخاص بالبوت
-BOT_TOKEN = '7614704758:AAGGv48BJqrzHJaUGWz4wQ2FL0iePS1HKxA'
+BOT_TOKEN = '7614704758:AAHXU2ZPBrYXIusXuwbFCKFrCCHtoT8n-Do'
 
 # مفتاح OMDb API
 OMDB_API_KEY = 'aa7d3da9'
