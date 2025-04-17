@@ -39,6 +39,32 @@ movies_of_the_day = [
     }
 ]
 
+# دالة للبحث عن الأفلام
+def search_movie(update, context):
+    title = ' '.join(context.args)
+    if not title:
+        update.message.reply_text("يرجى إدخال اسم الفيلم أو المسلسل بعد الأمر مثل: /search_movie The Dark Knight")
+        return
+
+    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
+    response = requests.get(url).json()
+
+    if response["Response"] == "True":
+        movie_info = f"""
+        *العنوان:* {response['Title']}
+        *السنة:* {response['Year']}
+        *التقييم:* {response['imdbRating']}
+        *النوع:* {response['Genre']}
+        *القصة:* {response['Plot']}
+        """
+        poster_url = response.get("Poster", "")
+        if poster_url and poster_url != "N/A":
+            update.message.reply_photo(photo=poster_url, caption=movie_info, parse_mode=ParseMode.MARKDOWN)
+        else:
+            update.message.reply_text(movie_info, parse_mode=ParseMode.MARKDOWN)
+    else:
+        update.message.reply_text("لم أتمكن من العثور على هذا الفيلم أو المسلسل. تأكد من الكتابة الصحيحة.")
+
 # دالة لعرض "فيلم اليوم" مع اقتباس
 def movie_of_the_day(update, context):
     movie = random.choice(movies_of_the_day)  # اختيار فيلم عشوائي من القائمة
@@ -79,7 +105,8 @@ def watch_today(update, context):
 def start(update, context):
     update.message.reply_text("مرحبًا! أنا بوت الأفلام. استخدم الأوامر التالية:\n"
                               "/movie_of_the_day - للحصول على فيلم اليوم مع اقتباس لتخمينه.\n"
-                              "/watch_today - للحصول على فيلم اليوم لبدء مشاهدته وتقييمه.\n")
+                              "/watch_today - للحصول على فيلم اليوم لبدء مشاهدته وتقييمه.\n"
+                              "/search_movie <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.")
 
 # الوظيفة الرئيسية للبوت
 def main():
@@ -89,6 +116,7 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("movie_of_the_day", movie_of_the_day))
     dp.add_handler(CommandHandler("watch_today", watch_today))
+    dp.add_handler(CommandHandler("search_movie", search_movie))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_answer))
 
     updater.start_polling()
