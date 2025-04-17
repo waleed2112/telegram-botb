@@ -110,8 +110,14 @@ def check_answer(update, context):
             hint = correct_answer[:min(3, user_hint[user]["attempts"])]
             user_hint[user]["hint"] = hint
             remaining_attempts = 3 - user_hint[user]["attempts"]
-            update.message.reply_text(f"للأسف، الإجابة خاطئة! التلميح التالي: {hint}\n"
-                                      f"تبقى لديك {remaining_attempts} محاولة.")
+            
+            if user_hint[user]["attempts"] >= 5:  # بعد المحاولة الخامسة نعرض الإجابة ونغير الاقتباس
+                update.message.reply_text(f"للأسف، الإجابة خاطئة! الإجابة الصحيحة هي: {correct_answer}\n"
+                                          f"تم تغيير الاقتباس لفيلم جديد!")
+                movie_of_the_day(update, context)  # تغيير الاقتباس بعد المحاولة الخامسة
+            else:
+                update.message.reply_text(f"للأسف، الإجابة خاطئة! التلميح التالي: {hint}\n"
+                                          f"تبقى لديك {remaining_attempts} محاولة.")
     else:
         update.message.reply_text(f"لم يتم تقديم تحدي الاقتباس بعد. استخدم الأمر /f لتحدي اليوم.")
 
@@ -147,14 +153,14 @@ def start(update, context):
                               "/lb - لعرض قائمة أفضل الناس الذين جاوبوا.\n"
                               "/r - لاقتراح أفلام ومسلسلات جديدة.\n\n"
                               "*للتواصل معي:* \n"
-                              "حسابي على السناب: https://www.snapchat.com/add/xwn_4")
+                              "حسابي على التليجرام: https://t.me/iLHwk")
 
 # دالة للمساعدة /help
 def help(update, context):
     user = update.message.from_user.username
     update.message.reply_text(f"مرحبًا {user}!\n\n"
                               "*للتواصل معي:*\n"
-                              "حسابي على السناب: https://www.snapchat.com/add/xwn_4")
+                              f"حسابي على السناب: {SNAPCHAT_LINK}")
 
 # الوظيفة الرئيسية للبوت
 def main():
