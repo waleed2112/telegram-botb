@@ -39,14 +39,30 @@ async def movie_info(update: Update, context: CallbackContext) -> None:
     data = response.json()
 
     if data.get("Response") == "True":
+        # استخراج البيانات من الاستجابة
+        title = data.get('Title')
+        year = data.get('Year')
+        rated = data.get('Rated')
+        genre = data.get('Genre')
+        imdb_rating = data.get('imdbRating')
+        plot = data.get('Plot')
+        poster_url = data.get('Poster')
+
         # إرسال المعلومات للمستخدم
-        movie_details = f"اسم الفيلم/المسلسل: {data.get('Title')}\n" \
-                        f"السنة: {data.get('Year')}\n" \
-                        f"التصنيف: {data.get('Rated')}\n" \
-                        f"النوع: {data.get('Genre')}\n" \
-                        f"التقييم: {data.get('imdbRating')}\n" \
-                        f"الملخص: {data.get('Plot')}"
+        movie_details = f"اسم الفيلم/المسلسل: {title}\n" \
+                        f"السنة: {year}\n" \
+                        f"التصنيف: {rated}\n" \
+                        f"النوع: {genre}\n" \
+                        f"التقييم: {imdb_rating}\n" \
+                        f"الملخص: {plot}"
+
+        # إرسال النص
         await update.message.reply_text(movie_details)
+
+        # إرسال الصورة إذا كانت موجودة
+        if poster_url and poster_url != 'N/A':
+            await update.message.reply_photo(poster_url)
+
     else:
         await update.message.reply_text("لم أتمكن من العثور على معلومات للفيلم أو المسلسل الذي أرسلته.")
 
@@ -59,18 +75,3 @@ async def main():
     application = Application.builder().token(BOT_TOKEN).build()
 
     # إضافة معالج للأمر /start
-    application.add_handler(CommandHandler("start", start))
-
-    # إضافة معالج للأمر الذي يتعامل مع الفيلم أو المسلسل
-    application.add_handler(CommandHandler("movie", movie_info))
-
-    # إضافة معالج للأخطاء
-    application.add_error_handler(error)
-
-    # بدء تشغيل البوت
-    await application.run_polling()
-
-# تشغيل البوت مباشرة باستخدام run_polling
-if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
