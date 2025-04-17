@@ -1,5 +1,6 @@
 import os
 import io
+import base64
 import requests
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
@@ -12,20 +13,22 @@ API_KEY = "AIzaSyDL_1GglThd7nEyQhGs3_3XR4wSNcZG8a8"
 
 # دالة لتحليل الصورة باستخدام Google Cloud Vision API
 def analyze_image(image_path):
-    # فتح الصورة
+    # فتح الصورة وتحويلها إلى Base64
     with io.open(image_path, 'rb') as image_file:
         content = image_file.read()
+
+    encoded_image = base64.b64encode(content).decode('utf-8')
 
     # تكوين الطلب باستخدام API key
     url = "https://vision.googleapis.com/v1/images:annotate"
     headers = {'Content-Type': 'application/json'}
-    
+
     # بناء البيانات للطلب
     data = {
         "requests": [
             {
                 "image": {
-                    "content": content.decode('ISO-8859-1')  # تحويل المحتوى إلى صيغة نصية
+                    "content": encoded_image
                 },
                 "features": [
                     {
