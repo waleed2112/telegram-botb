@@ -42,11 +42,16 @@ movies_of_the_day = [
     }
 ]
 
+# قاعدة بيانات النقاط
+user_points = {}
+
 # دالة للبحث عن الأفلام
 def search_movie(update, context):
     title = ' '.join(context.args)
+    user = update.message.from_user.username
     if not title:
-        update.message.reply_text("يرجى إدخال اسم الفيلم أو المسلسل مثل: /m The Dark Knight")
+        update.message.reply_text(f"مرحبًا {user}, يرجى إدخال اسم الفيلم أو المسلسل مثل: /m The Dark Knight\n\n"
+                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
         return
 
     url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
@@ -66,14 +71,16 @@ def search_movie(update, context):
         else:
             update.message.reply_text(movie_info, parse_mode=ParseMode.MARKDOWN)
     else:
-        update.message.reply_text("لم أتمكن من العثور على هذا الفيلم أو المسلسل. تأكد من الكتابة الصحيحة.")
+        update.message.reply_text(f"لم أتمكن من العثور على هذا الفيلم أو المسلسل. تأكد من الكتابة الصحيحة، {user}.\n\n"
+                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
 
 # دالة لعرض "فيلم اليوم" مع اقتباس عشوائي
 def movie_of_the_day(update, context):
     movie = random.choice(movies_of_the_day)  # اختيار فيلم عشوائي من القائمة
     movie_title = movie["title"]
     movie_quote = movie["quote"]
-    update.message.reply_text(f"فيلم اليوم هو: *{movie_title}*\n\n"
+    user = update.message.from_user.username
+    update.message.reply_text(f"مرحبًا {user}, فيلم اليوم هو: *{movie_title}*\n\n"
                               f"اقتباس من الفيلم: \n\n*\"{movie_quote}\"*\n\n"
                               "هل يمكنك تخمين من قال هذا الاقتباس؟ اكتب إجابتك!\n\n"
                               f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
@@ -83,34 +90,53 @@ def movie_of_the_day(update, context):
 
 # دالة لتحقق من الإجابة
 def check_answer(update, context):
+    user = update.message.from_user.username
     movie = context.user_data.get('movie_of_the_day')
     if movie:
         correct_answer = movie["correct_answer"]
         user_answer = update.message.text.strip()
 
         if user_answer.lower() == correct_answer.lower():
-            update.message.reply_text("مبروك! لقد أجبت بشكل صحيح! 🎉\n"
-                                      "لقد ربحت 10 نقاط! 🏅")
-            # هنا يمكن إضافة كود لحساب النقاط في قاعدة بيانات خاصة بك
+            # إضافة نقاط للمستخدم عند الإجابة الصحيحة
+            user_points[user] = user_points.get(user, 0) + 10
+            update.message.reply_text(f"مبروك {user}! لقد أجبت بشكل صحيح! 🎉\n"
+                                      "لقد ربحت 10 نقاط! 🏅\n"
+                                      f"مجموع نقاطك الآن: {user_points[user]}")
         else:
             update.message.reply_text(f"للأسف، الإجابة خاطئة! الإجابة الصحيحة هي: {correct_answer}")
     else:
-        update.message.reply_text("لم يتم تقديم تحدي الاقتباس بعد. استخدم الأمر /f لتحدي اليوم.")
+        update.message.reply_text(f"لم يتم تقديم تحدي الاقتباس بعد. استخدم الأمر /f لتحدي اليوم.")
+
+# دالة لعرض أعلى النقاط
+def leaderboard(update, context):
+    if not user_points:
+        update.message.reply_text("لا توجد نقاط حالياً. ابدأ بتخمين الاقتباسات للحصول على نقاط!")
+        return
+
+    sorted_users = sorted(user_points.items(), key=lambda x: x[1], reverse=True)
+    leaderboard_message = "*قائمة أعلى النقاط:*\n\n"
+    for i, (user, points) in enumerate(sorted_users, 1):
+        leaderboard_message += f"{i}. {user} - {points} نقاط\n"
+
+    update.message.reply_text(leaderboard_message)
 
 # دالة لعرض "مشاهدة اليوم"
 def watch_today(update, context):
     movie = random.choice(movies_of_the_day)  # اختيار فيلم عشوائي من القائمة
     movie_title = movie["title"]
-    update.message.reply_text(f"فيلم اليوم هو: *{movie_title}*\n\n"
+    user = update.message.from_user.username
+    update.message.reply_text(f"مرحبًا {user}, فيلم اليوم هو: *{movie_title}*\n\n"
                               "شاهد الفيلم وشاركنا رأيك بعد المشاهدة! 🎬\n"
                               "اخبرني إذا كنت قد شاهدت الفيلم ماذا كان رأيك؟")
 
 # دالة لبدء البوت
 def start(update, context):
-    update.message.reply_text("مرحبًا! أنا بوت الأفلام. استخدم الأوامر التالية:\n"
+    user = update.message.from_user.username
+    update.message.reply_text(f"مرحبًا {user}! أنا بوت الأفلام. استخدم الأوامر التالية:\n"
                               "/f - للحصول على فيلم اليوم مع اقتباس لتخمينه.\n"
                               "/w - للحصول على فيلم اليوم لبدء مشاهدته وتقييمه.\n"
-                              "/m <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.")
+                              "/m <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.\n"
+                              "/lb - لعرض قائمة أعلى النقاط.")
 
 # الوظيفة الرئيسية للبوت
 def main():
@@ -121,6 +147,7 @@ def main():
     dp.add_handler(CommandHandler("f", movie_of_the_day))
     dp.add_handler(CommandHandler("w", watch_today))
     dp.add_handler(CommandHandler("m", search_movie))
+    dp.add_handler(CommandHandler("lb", leaderboard))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_answer))
 
     updater.start_polling()
