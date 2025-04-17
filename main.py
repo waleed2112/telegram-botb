@@ -144,6 +144,15 @@ def recommend_movies(update, context):
                               "*5. The Witcher*\n\n"
                               "اختر فيلمًا أو مسلسلًا لمشاهدته، وشاركنا رأيك بعد المشاهدة!")
 
+# دالة لعرض "مشاهدة اليوم"
+def watch_today(update, context):
+    movie = random.choice(movies_of_the_day)  # اختيار فيلم عشوائي من القائمة
+    movie_title = movie["title"]
+    user = update.message.from_user.username
+    update.message.reply_text(f"مرحبًا {user}, فيلم اليوم هو: *{movie_title}*\n\n"
+                              "شاهد الفيلم وشاركنا رأيك بعد المشاهدة! 🎬\n"
+                              "اخبرني إذا كنت قد شاهدت الفيلم ماذا كان رأيك؟")
+
 # دالة لبدء البوت
 def start(update, context):
     user = update.message.from_user.username
@@ -162,7 +171,7 @@ def main():
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("f", movie_of_the_day))
-    dp.add_handler(CommandHandler("w", watch_today))
+    dp.add_handler(CommandHandler("w", watch_today))  # إضافة هذه الدالة هنا
     dp.add_handler(CommandHandler("m", search_movie))
     dp.add_handler(CommandHandler("lb", show_leaderboard))
     dp.add_handler(CommandHandler("r", recommend_movies))  # إضافة الأمر لاقتراح الأفلام
