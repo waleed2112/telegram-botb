@@ -6,8 +6,8 @@ from googletrans import Translator
 # التوكن الخاص بالبوت
 BOT_TOKEN = '7614704758:AAHXU2ZPBrYXIusXuwbFCKFrCCHtoT8n-Do'
 
-# مفتاح OMDb API
-OMDB_API_KEY = 'aa7d3da9'
+# مفتاح TMDb API
+TMDB_API_KEY = '746779b16b752d4cbc6f46c42e87dde9'  # ضع هنا مفتاح API الخاص بك
 
 # حساب السناب
 SNAPCHAT_USERNAME = "XWN_4"
@@ -30,12 +30,12 @@ def search_by_genre(update, context):
         update.message.reply_text("يرجى إدخال النوع بعد الأمر مثل: /search_by_genre أكشن")
         return
 
-    url = f"http://www.omdbapi.com/?s=&genre={genre}&apikey={OMDB_API_KEY}"
+    url = f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&with_genres={genre}"
     response = requests.get(url).json()
 
-    if response.get("Response") == "True":
-        movies = response.get("Search", [])
-        movie_list = "\n".join([f"{movie['Title']} ({movie['Year']})" for movie in movies])
+    if response.get("results"):
+        movies = response.get("results", [])
+        movie_list = "\n".join([f"{movie['title']} ({movie['release_date'][:4]})" for movie in movies])
         update.message.reply_text(f"أفلام في نوع {genre}:\n{movie_list}\n\n"
                                   f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
     else:
@@ -45,13 +45,12 @@ def search_by_genre(update, context):
 # دالة للبحث عن الأفلام حسب التقييم
 def search_by_rating(update, context):
     rating_threshold = float(context.args[0]) if context.args else 8.0
-    url = f"http://www.omdbapi.com/?s=&apikey={OMDB_API_KEY}"
+    url = f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&vote_average.gte={rating_threshold}"
     response = requests.get(url).json()
 
-    if response.get("Response") == "True":
-        movies = response.get("Search", [])
-        top_rated_movies = [movie for movie in movies if float(movie['imdbRating']) >= rating_threshold]
-        movie_list = "\n".join([f"{movie['Title']} ({movie['Year']}) - {movie['imdbRating']}" for movie in top_rated_movies])
+    if response.get("results"):
+        movies = response.get("results", [])
+        movie_list = "\n".join([f"{movie['title']} ({movie['release_date'][:4]}) - {movie['vote_average']}" for movie in movies])
         update.message.reply_text(f"أفلام بتقييم أعلى من {rating_threshold}:\n{movie_list}\n\n"
                                   f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
     else:
@@ -60,45 +59,45 @@ def search_by_rating(update, context):
 
 # دالة لعرض أفضل الأفلام أو المسلسلات
 def top_rated(update, context):
-    url = f"http://www.omdbapi.com/?s=&apikey={OMDB_API_KEY}&type=movie,series"
+    url = f"https://api.themoviedb.org/3/movie/top_rated?api_key={TMDB_API_KEY}"
     response = requests.get(url).json()
 
-    if response.get("Response") == "True":
-        movies = response.get("Search", [])
-        # معالجة تصنيف الأفلام أو المسلسلات حسب التقييم (بترتيب تنازلي)
-        top_movies = sorted(movies, key=lambda x: float(x['imdbRating']) if x['imdbRating'] != "N/A" else 0, reverse=True)[:5]
-        
+    if response.get("results"):
+        movies = response.get("results", [])
+        top_movies = sorted(movies, key=lambda x: x['vote_average'], reverse=True)[:5]
+
         if top_movies:
-            movie_list = "\n".join([f"{movie['Title']} ({movie['Year']}) - {movie['imdbRating']}" for movie in top_movies])
-            update.message.reply_text(f"أفضل الأفلام أو المسلسلات:\n{movie_list}\n\n"
+            movie_list = "\n".join([f"{movie['title']} ({movie['release_date'][:4]}) - {movie['vote_average']}" for movie in top_movies])
+            update.message.reply_text(f"أفضل الأفلام:\n{movie_list}\n\n"
                                       f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
         else:
-            update.message.reply_text("لم أتمكن من العثور على أفضل الأفلام أو المسلسلات.\n\n"
+            update.message.reply_text("لم أتمكن من العثور على أفضل الأفلام.\n\n"
                                       f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
     else:
-        update.message.reply_text("لم أتمكن من العثور على أفلام أو مسلسلات بناءً على التقييم.\n\n"
+        update.message.reply_text("لم أتمكن من العثور على أفلام بناءً على التقييم.\n\n"
                                   f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
 
 # دالة لمعالجة الرسائل
 def handle_message(update, context):
     title = update.message.text
-    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
+    url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={title}"
     response = requests.get(url).json()
 
-    if response["Response"] == "True":
-        translated_plot = translator.translate(response["Plot"], dest='ar').text
+    if response["results"]:
+        movie = response["results"][0]  # نأخذ أول نتيجة فقط
+        translated_plot = translator.translate(movie["overview"], dest='ar').text
 
         reply = f"""
-*العنوان:* {response['Title']}
-*السنة:* {response['Year']}
-*التقييم:* {response['imdbRating']}
-*النوع:* {response['Genre']}
+*العنوان:* {movie['title']}
+*السنة:* {movie['release_date'][:4]}
+*التقييم:* {movie['vote_average']}
+*النوع:* {movie['genre_ids']}
 *القصة:* {translated_plot}
 """
 
-        poster_url = response.get("Poster", "")
+        poster_url = f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}"
 
-        if poster_url and poster_url != "N/A":
+        if poster_url:
             update.message.reply_photo(photo=poster_url, caption=reply, parse_mode=ParseMode.MARKDOWN)
         else:
             update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
