@@ -150,4 +150,6 @@ def main():
     updater.start_polling()
     updater.idle()
 
-if _name_ == "_main_":
+# التأكد من تشغيل الكود فقط عند استدعاء السكربت بشكل مباشر
+if __name__ == "__main__":
+    main()
