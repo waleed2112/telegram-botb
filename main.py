@@ -67,17 +67,28 @@ def search_movie(update, context):
     if movie_name:
         # إجراء البحث عن الفيلم باستخدام OMDb API
         url = f"http://www.omdbapi.com/?t={movie_name}&apikey=aa7d3da9&plot=full&language=en"
-        response = requests.get(url).json()
+        
+        # طلب البيانات من OMDb API
+        response = requests.get(url)
+        
+        # طباعة الاستجابة لتمكين التشخيص
+        print("استجابة OMDb API:", response.text)
 
-        if response["Response"] == "True":
+        try:
+            data = response.json()
+        except ValueError:
+            update.message.reply_text("لم أتمكن من معالجة الاستجابة من OMDb API.")
+            return
+        
+        if data.get("Response") == "True":
             movie_info = f"""
-            *العنوان:* {response['Title']}
-            *السنة:* {response['Year']}
-            *التقييم:* {response['imdbRating']}
-            *النوع:* {response['Genre']}
-            *القصة:* {response['Plot']}
+            *العنوان:* {data['Title']}
+            *السنة:* {data['Year']}
+            *التقييم:* {data['imdbRating']}
+            *النوع:* {data['Genre']}
+            *القصة:* {data['Plot']}
             """
-            poster_url = response.get("Poster", "")
+            poster_url = data.get("Poster", "")
             if poster_url and poster_url != "N/A":
                 update.message.reply_photo(photo=poster_url, caption=movie_info, parse_mode=ParseMode.MARKDOWN)
             else:
