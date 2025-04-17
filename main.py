@@ -109,8 +109,9 @@ def check_answer(update, context):
             # التلميح يتكون من 3 حروف فقط
             hint = correct_answer[:min(3, user_hint[user]["attempts"])]
             user_hint[user]["hint"] = hint
-            update.message.reply_text(f"للأسف، الإجابة خاطئة! التلميح التالي: {hint}")
-
+            remaining_attempts = 3 - user_hint[user]["attempts"]
+            update.message.reply_text(f"للأسف، الإجابة خاطئة! التلميح التالي: {hint}\n"
+                                      f"تبقى لديك {remaining_attempts} محاولة.")
     else:
         update.message.reply_text(f"لم يتم تقديم تحدي الاقتباس بعد. استخدم الأمر /f لتحدي اليوم.")
 
@@ -152,12 +153,6 @@ def start(update, context):
 def help(update, context):
     user = update.message.from_user.username
     update.message.reply_text(f"مرحبًا {user}!\n\n"
-                              "هذه قائمة بالأوامر التي يمكنك استخدامها:\n\n"
-                              "/f - للحصول على فيلم اليوم مع اقتباس لتخمينه.\n"
-                              "/w - للحصول على فيلم اليوم لبدء مشاهدته وتقييمه.\n"
-                              "/m <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.\n"
-                              "/lb - لعرض قائمة أفضل الناس الذين جاوبوا.\n"
-                              "/r - لاقتراح أفلام ومسلسلات جديدة.\n\n"
                               "*للتواصل معي:*\n"
                               "حسابي على السناب: https://www.snapchat.com/add/xwn_4")
 
