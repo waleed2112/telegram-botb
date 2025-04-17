@@ -1,4 +1,5 @@
 import requests
+import time
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 
@@ -10,30 +11,32 @@ IPTV_PASSWORD = "37946180"
 # التوكن الخاص بالبوت
 BOT_TOKEN = '7614704758:AAHXU2ZPBrYXIusXuwbFCKFrCCHtoT8n-Do'
 
-# دالة لسحب الأفلام والمسلسلات من IPTV
+# دالة لسحب الأفلام والمسلسلات من IPTV مع آلية إعادة المحاولة
 def fetch_movies_and_series():
-    # إعداد معلمات الطلب باستخدام بيانات الاعتماد
     params = {
         'username': IPTV_USERNAME,
         'password': IPTV_PASSWORD
     }
     
-    try:
-        # إرسال الطلب إلى خدمة IPTV مع المعلمات
-        response = requests.get(IPTV_API_URL, params=params)
-        data = response.json()
-        
-        # التحقق من وجود بيانات الأفلام والمسلسلات
-        if 'movie_data' in data:
-            movies = data['movie_data']  # استخراج الأفلام والمسلسلات
-            return movies
-        else:
-            print("لم يتم العثور على بيانات الأفلام أو المسلسلات.")
-            return None
-    
-    except requests.exceptions.RequestException as e:
-        print(f"خطأ في الاتصال بخدمة IPTV: {e}")
-        return None
+    for attempt in range(3):  # حاول 3 مرات
+        try:
+            # إرسال الطلب إلى خدمة IPTV مع المعلمات
+            response = requests.get(IPTV_API_URL, params=params)
+            data = response.json()
+
+            # التحقق من وجود بيانات الأفلام والمسلسلات
+            if 'movie_data' in data:
+                movies = data['movie_data']  # استخراج الأفلام والمسلسلات
+                return movies
+            else:
+                print("لم يتم العثور على بيانات الأفلام أو المسلسلات.")
+                return None
+        except requests.exceptions.RequestException as e:
+            # في حالة حدوث خطأ في الاتصال
+            print(f"خطأ في الاتصال: {e}. إعادة المحاولة ({attempt + 1}/3)...")
+            time.sleep(2)  # انتظر 2 ثانية قبل المحاولة مرة أخرى
+
+    return None  # فشل في الاتصال بعد 3 محاولات
 
 # دالة لعرض قائمة الأفلام والمسلسلات للمستخدم
 def show_movies(update, context):
