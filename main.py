@@ -1,7 +1,8 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
-import random
 import requests
+from googletrans import Translator
+import random
 
 # التوكن الخاص بالبوت
 BOT_TOKEN = '7614704758:AAHXU2ZPBrYXIusXuwbFCKFrCCHtoT8n-Do'
@@ -10,133 +11,133 @@ BOT_TOKEN = '7614704758:AAHXU2ZPBrYXIusXuwbFCKFrCCHtoT8n-Do'
 OMDB_API_KEY = 'aa7d3da9'
 
 # حساب السناب
-SNAPCHAT_USERNAME = "xwn_4"
+SNAPCHAT_USERNAME = "XWN_4"
 SNAPCHAT_LINK = f"https://www.snapchat.com/add/{SNAPCHAT_USERNAME}"
 
-# قائمة أفلام "فيلم اليوم" مع اقتباسات
-movies_of_the_day = [
-    {
-        "title": "The Dark Knight",
-        "quote": "Why so serious?",
-        "correct_answer": "The Joker"
-    },
-    {
-        "title": "Forrest Gump",
-        "quote": "Life is like a box of chocolates.",
-        "correct_answer": "Forrest Gump"
-    },
-    {
-        "title": "The Godfather",
-        "quote": "I'm gonna make him an offer he can't refuse.",
-        "correct_answer": "Don Vito Corleone"
-    },
-    {
-        "title": "Inception",
-        "quote": "You mustn't be afraid to dream a little bigger, darling.",
-        "correct_answer": "Eames"
-    },
-    {
-        "title": "Star Wars: Episode V - The Empire Strikes Back",
-        "quote": "No, I am your father.",
-        "correct_answer": "Darth Vader"
-    }
+# اسم المستخدم في تلجرام
+USER_TELEGRAM = "@iLHwk"
+
+# متغيرات اللعبة والتحديات
+user_scores = {}  # لتخزين النقاط
+quotes = [
+    {"quote": "May the Force be with you.", "movie": "Star Wars", "hint": "This is a famous line from a space-themed saga."},
+    {"quote": "I'll be back.", "movie": "The Terminator", "hint": "A famous quote from a movie about a cyborg."},
+    # أضف هنا المزيد من الاقتباسات حسب رغبتك
 ]
+quote_today = random.choice(quotes)  # اقتباس اليوم
 
-# قاعدة بيانات النقاط
-user_points = {}
+translator = Translator()
 
-# دالة للبحث عن الأفلام
-def search_movie(update, context):
-    title = ' '.join(context.args)
-    user = update.message.from_user.username
-    if not title:
-        update.message.reply_text(f"مرحبًا {user}, يرجى إدخال اسم الفيلم أو المسلسل مثل: /m The Dark Knight\n\n"
-                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+# دالة لبدء البوت
+def start(update, context):
+    update.message.reply_text(f"أرسل اسم فيلم أو مسلسل للبحث، أو استخدم الأوامر التالية:\n"
+                              "/top - للحصول على أفضل الأفلام أو المسلسلات\n"
+                              "/genre <النوع> - للبحث عن أفلام حسب النوع\n"
+                              "/rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n"
+                              f"/help - لمساعدتك\n\n"
+                              f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+
+# دالة لعرض /help مع اليوزر
+def help(update, context):
+    update.message.reply_text(f"لأي استفسار تواصل مع {USER_TELEGRAM}.\n"
+                              "يمكنك إرسال اسم فيلم أو مسلسل للبحث عنه أو استخدم الأوامر كما ذكرنا.\n"
+                              f"أرسل اقتباسات من الأفلام كل يوم مع تحدي جديد.\n\n"
+                              f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+
+# دالة للبحث عن الأفلام حسب النوع
+def search_by_genre(update, context):
+    genre = ' '.join(context.args)
+    if not genre:
+        update.message.reply_text("يرجى إدخال النوع بعد الأمر مثل: /genre أكشن")
         return
 
+    url = f"http://www.omdbapi.com/?s=&genre={genre}&apikey={OMDB_API_KEY}"
+    response = requests.get(url).json()
+
+    if response.get("Response") == "True":
+        movies = response.get("Search", [])
+        movie_list = "\n".join([f"{movie['Title']} ({movie['Year']})" for movie in movies])
+        update.message.reply_text(f"أفلام في نوع {genre}:\n{movie_list}")
+    else:
+        update.message.reply_text(f"لم أتمكن من العثور على أفلام من نوع {genre}.\n\n"
+                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+
+# دالة لعرض أفضل الأفلام أو المسلسلات
+def top_rated(update, context):
+    url = f"http://www.omdbapi.com/?s=&apikey={OMDB_API_KEY}&type=movie,series"
+    response = requests.get(url).json()
+
+    if response.get("Response") == "True":
+        movies = response.get("Search", [])
+        top_movies = sorted(movies, key=lambda x: float(x['imdbRating']) if x['imdbRating'] != "N/A" else 0, reverse=True)[:5]
+
+        if top_movies:
+            movie_list = "\n".join([f"{movie['Title']} ({movie['Year']}) - {movie['imdbRating']}" for movie in top_movies])
+            update.message.reply_text(f"أفضل الأفلام أو المسلسلات:\n{movie_list}")
+        else:
+            update.message.reply_text("لم أتمكن من العثور على أفضل الأفلام أو المسلسلات.")
+    else:
+        update.message.reply_text("لم أتمكن من العثور على أفلام أو مسلسلات بناءً على التقييم.")
+
+# دالة لمعالجة الرسائل (البحث عن الفيلم أو المسلسل)
+def handle_message(update, context):
+    title = update.message.text
     url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
     response = requests.get(url).json()
 
     if response["Response"] == "True":
-        movie_info = f"""
-        *العنوان:* {response['Title']}
-        *السنة:* {response['Year']}
-        *التقييم:* {response['imdbRating']}
-        *النوع:* {response['Genre']}
-        *القصة:* {response['Plot']}
-        """
+        translated_plot = translator.translate(response["Plot"], dest='ar').text
+
+        reply = f"""
+*العنوان:* {response['Title']}
+*السنة:* {response['Year']}
+*التقييم:* {response['imdbRating']}
+*النوع:* {response['Genre']}
+*القصة:* {translated_plot}
+"""
+
         poster_url = response.get("Poster", "")
+
         if poster_url and poster_url != "N/A":
-            update.message.reply_photo(photo=poster_url, caption=movie_info, parse_mode=ParseMode.MARKDOWN)
+            update.message.reply_photo(photo=poster_url, caption=reply, parse_mode=ParseMode.MARKDOWN)
         else:
-            update.message.reply_text(movie_info, parse_mode=ParseMode.MARKDOWN)
+            update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
     else:
-        update.message.reply_text(f"لم أتمكن من العثور على هذا الفيلم أو المسلسل. تأكد من الكتابة الصحيحة، {user}.\n\n"
-                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+        update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
 
-# دالة لعرض "فيلم اليوم" مع اقتباس عشوائي
-def movie_of_the_day(update, context):
-    movie = random.choice(movies_of_the_day)  # اختيار فيلم عشوائي من القائمة
-    movie_title = movie["title"]
-    movie_quote = movie["quote"]
-    user = update.message.from_user.username
-    update.message.reply_text(f"مرحبًا {user}, فيلم اليوم هو: *{movie_title}*\n\n"
-                              f"اقتباس من الفيلم: \n\n*\"{movie_quote}\"*\n\n"
-                              "هل يمكنك تخمين من قال هذا الاقتباس؟ اكتب إجابتك!\n\n"
-                              f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
-    
-    # حفظ الفيلم والاقتباس في السياق لمقارنة الإجابة لاحقًا
-    context.user_data['movie_of_the_day'] = movie
+# دالة لتحدي الاقتباس
+def quote_challenge(update, context):
+    user_id = update.message.from_user.id
+    if user_id not in user_scores:
+        user_scores[user_id] = 0
 
-# دالة لتحقق من الإجابة
+    update.message.reply_text(f"تحدي اليوم: \n" 
+                              f"ما هو الفيلم الذي جاء منه هذا الاقتباس: \n\n"
+                              f"*'{quote_today['quote']}'* \n\n"
+                              f"إذا أجبت بشكل صحيح، ستحصل على نقاط!")
+
+# دالة لمعالجة الإجابات
 def check_answer(update, context):
-    user = update.message.from_user.username
-    movie = context.user_data.get('movie_of_the_day')
-    if movie:
-        correct_answer = movie["correct_answer"]
-        user_answer = update.message.text.strip()
+    user_answer = update.message.text.lower()
+    correct_answer = quote_today['movie'].lower()
 
-        if user_answer.lower() == correct_answer.lower():
-            # إضافة نقاط للمستخدم عند الإجابة الصحيحة
-            user_points[user] = user_points.get(user, 0) + 10
-            update.message.reply_text(f"مبروك {user}! لقد أجبت بشكل صحيح! 🎉\n"
-                                      "لقد ربحت 10 نقاط! 🏅\n"
-                                      f"مجموع نقاطك الآن: {user_points[user]}")
-        else:
-            update.message.reply_text(f"للأسف، الإجابة خاطئة! الإجابة الصحيحة هي: {correct_answer}")
+    user_id = update.message.from_user.id
+    if user_id not in user_scores:
+        user_scores[user_id] = 0
+
+    if user_answer == correct_answer:
+        user_scores[user_id] += 10
+        update.message.reply_text(f"إجابة صحيحة! نقاطك: {user_scores[user_id]}")
     else:
-        update.message.reply_text(f"لم يتم تقديم تحدي الاقتباس بعد. استخدم الأمر /f لتحدي اليوم.")
+        hint = quote_today['hint']
+        user_scores[user_id] = max(0, user_scores[user_id] - 2)  # خصم نقطتين على كل تلميح
+        update.message.reply_text(f"إجابة خاطئة! تلميح: {hint} \nنقاطك: {user_scores[user_id]}")
 
-# دالة لعرض أعلى النقاط
-def leaderboard(update, context):
-    if not user_points:
-        update.message.reply_text("لا توجد نقاط حالياً. ابدأ بتخمين الاقتباسات للحصول على نقاط!")
-        return
-
-    sorted_users = sorted(user_points.items(), key=lambda x: x[1], reverse=True)
-    leaderboard_message = "*قائمة أعلى النقاط:*\n\n"
-    for i, (user, points) in enumerate(sorted_users, 1):
-        leaderboard_message += f"{i}. {user} - {points} نقاط\n"
-
-    update.message.reply_text(leaderboard_message)
-
-# دالة لعرض "مشاهدة اليوم"
-def watch_today(update, context):
-    movie = random.choice(movies_of_the_day)  # اختيار فيلم عشوائي من القائمة
-    movie_title = movie["title"]
-    user = update.message.from_user.username
-    update.message.reply_text(f"مرحبًا {user}, فيلم اليوم هو: *{movie_title}*\n\n"
-                              "شاهد الفيلم وشاركنا رأيك بعد المشاهدة! 🎬\n"
-                              "اخبرني إذا كنت قد شاهدت الفيلم ماذا كان رأيك؟")
-
-# دالة لبدء البوت
-def start(update, context):
-    user = update.message.from_user.username
-    update.message.reply_text(f"مرحبًا {user}! أنا بوت الأفلام. استخدم الأوامر التالية:\n"
-                              "/f - للحصول على فيلم اليوم مع اقتباس لتخمينه.\n"
-                              "/w - للحصول على فيلم اليوم لبدء مشاهدته وتقييمه.\n"
-                              "/m <اسم الفيلم أو المسلسل> - للبحث عن فيلم أو مسلسل.\n"
-                              "/lb - لعرض قائمة أعلى النقاط.")
+# دالة لعرض أفضل اللاعبين في التحدي
+def top_scorers(update, context):
+    sorted_scores = sorted(user_scores.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_users = "\n".join([f"{update.message.bot.get_chat(user_id).username}: {score}" for user_id, score in sorted_scores])
+    update.message.reply_text(f"أفضل 5 لاعبين في التحدي:\n{top_users}")
 
 # الوظيفة الرئيسية للبوت
 def main():
@@ -144,11 +145,13 @@ def main():
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("f", movie_of_the_day))
-    dp.add_handler(CommandHandler("w", watch_today))
-    dp.add_handler(CommandHandler("m", search_movie))
-    dp.add_handler(CommandHandler("lb", leaderboard))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, check_answer))
+    dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("top", top_rated))
+    dp.add_handler(CommandHandler("genre", search_by_genre))
+    dp.add_handler(CommandHandler("rating", top_rated))
+    dp.add_handler(CommandHandler("quote", quote_challenge))  # إضافة لتحدي الاقتباس
+    dp.add_handler(CommandHandler("top_scores", top_scorers))  # إضافة لعرض أفضل اللاعبين
+    dp.add_handler(MessageHandler(Filters.text, handle_message))
 
     updater.start_polling()
     updater.idle()
