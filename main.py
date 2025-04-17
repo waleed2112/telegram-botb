@@ -11,92 +11,29 @@ OMDB_API_KEY = 'aa7d3da9'
 
 translator = Translator()
 
-# دالة لبدء البوت
 def start(update, context):
-    update.message.reply_text("مرحباً! أرسل اسم فيلم أو مسلسل للحصول على التفاصيل. استخدم الأوامر التالية:\n"
-                              "/top_rated - للحصول على أفضل الأفلام\n"
-                              "/search_by_genre <النوع> - للبحث عن أفلام حسب النوع\n"
-                              "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n"
-                              "/change_language <اللغة> - لتغيير لغة الترجمة")
+    update.message.reply_text("مرحباً! أرسل لي اسم فيلم أو مسلسل أو استخدم الأوامر المتاحة.")
 
-# دالة للبحث عن الأفلام حسب النوع
-def search_by_genre(update, context):
-    genre = ' '.join(context.args)
-    if not genre:
-        update.message.reply_text("يرجى إدخال النوع بعد الأمر مثل: /search_by_genre أكشن")
-        return
-
-    url = f"http://www.omdbapi.com/?s=&genre={genre}&apikey={OMDB_API_KEY}"
-    response = requests.get(url).json()
-
-    if response.get("Response") == "True":
-        movies = response.get("Search", [])
-        movie_list = "\n".join([f"{movie['Title']} ({movie['Year']})" for movie in movies])
-        update.message.reply_text(f"أفلام في نوع {genre}:\n{movie_list}")
-    else:
-        update.message.reply_text(f"لم أتمكن من العثور على أفلام من نوع {genre}")
-
-# دالة للبحث عن الأفلام حسب التقييم
-def search_by_rating(update, context):
-    try:
-        rating_threshold = float(context.args[0]) if context.args else 8.0
-    except ValueError:
-        update.message.reply_text("يرجى إدخال التقييم بشكل صحيح بعد الأمر مثل: /search_by_rating 7.5")
-        return
-
-    url = f"http://www.omdbapi.com/?s=&apikey={OMDB_API_KEY}"
-    response = requests.get(url).json()
-
-    if response.get("Response") == "True":
-        movies = response.get("Search", [])
-        top_rated_movies = [movie for movie in movies if float(movie['imdbRating']) >= rating_threshold]
-        movie_list = "\n".join([f"{movie['Title']} ({movie['Year']}) - {movie['imdbRating']}" for movie in top_rated_movies])
-        update.message.reply_text(f"أفلام بتقييم أعلى من {rating_threshold}:\n{movie_list}")
-    else:
-        update.message.reply_text("لم أتمكن من العثور على أفلام بناءً على التقييم المحدد.")
-
-# دالة لعرض أفضل الأفلام أو المسلسلات
-def top_rated(update, context):
-    url = f"http://www.omdbapi.com/?s=&apikey={OMDB_API_KEY}"
-    response = requests.get(url).json()
-
-    if response.get("Response") == "True":
-        movies = response.get("Search", [])
-        top_movies = sorted(movies, key=lambda x: float(x['imdbRating']), reverse=True)[:5]
-        movie_list = "\n".join([f"{movie['Title']} ({movie['Year']}) - {movie['imdbRating']}" for movie in top_movies])
-        update.message.reply_text(f"أفضل الأفلام أو المسلسلات:\n{movie_list}")
-    else:
-        update.message.reply_text("لم أتمكن من العثور على أفضل الأفلام أو المسلسلات.")
-
-# دالة لتغيير لغة الترجمة
-def change_language(update, context):
-    if context.args:
-        new_language = context.args[0]
-        if new_language in ['ar', 'en', 'fr', 'de']:  # لغات مدعومة
-            global language
-            language = new_language
-            update.message.reply_text(f"تم تغيير لغة الترجمة إلى: {new_language}")
-        else:
-            update.message.reply_text("اللغة غير مدعومة. يمكن استخدام: ar, en, fr, de.")
-    else:
-        update.message.reply_text("يرجى تحديد اللغة بعد الأمر مثل: /change_language ar")
-
-# دالة لمعالجة الرسائل
+# دالة للرد فقط على الرسائل من المستخدمين
 def handle_message(update, context):
+    # التحقق من أن المرسل ليس بوت
+    if update.message.from_user.is_bot:
+        return
+
     title = update.message.text
-    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language={language}"
+    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
     response = requests.get(url).json()
 
     if response["Response"] == "True":
-        translated_plot = translator.translate(response["Plot"], dest=language).text
+        translated_plot = translator.translate(response["Plot"], dest='ar').text
 
         reply = f"""
-*العنوان:* {response['Title']}
-*السنة:* {response['Year']}
-*التقييم:* {response['imdbRating']}
-*النوع:* {response['Genre']}
-*القصة:* {translated_plot}
-"""
+        *العنوان:* {response['Title']}
+        *السنة:* {response['Year']}
+        *التقييم:* {response['imdbRating']}
+        *النوع:* {response['Genre']}
+        *القصة:* {translated_plot}
+        """
 
         poster_url = response.get("Poster", "")
 
@@ -107,21 +44,15 @@ def handle_message(update, context):
     else:
         update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.")
 
-# الوظيفة الرئيسية للبوت
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("top_rated", top_rated))
-    dp.add_handler(CommandHandler("search_by_genre", search_by_genre))
-    dp.add_handler(CommandHandler("search_by_rating", search_by_rating))
-    dp.add_handler(CommandHandler("change_language", change_language))
-    dp.add_handler(MessageHandler(Filters.text, handle_message))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))  # عدم الرد على البوتات
 
     updater.start_polling()
     updater.idle()
 
 if __name__ == "__main__":
-    language = 'ar'  # اللغة الافتراضية
     main()
