@@ -29,8 +29,11 @@ def analyze_image(image_path):
     response = client.text_detection(image=image)
     texts = response.text_annotations
 
-    # طباعة النصوص المستخرجة لتحديد ما إذا كان يتم استخراج النص الصحيح
+    # طباعة جميع النصوص المستخرجة لتشخيص النتائج
     if texts:
+        print("النصوص المستخرجة من الصورة:")
+        for text in texts:
+            print(text.description)  # طباعة النص المستخرج من كل نتيجة
         return texts[0].description  # العودة إلى أول نتيجة (أعلى نص مستخرج)
     return None
 
