@@ -2,7 +2,6 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
 import requests
 from googletrans import Translator
-import random
 
 # التوكن الخاص بالبوت
 BOT_TOKEN = '7614704758:AAHXU2ZPBrYXIusXuwbFCKFrCCHtoT8n-Do'
@@ -22,50 +21,54 @@ def start(update, context):
                               "/top_rated - للحصول على أفضل الأفلام أو المسلسلات\n"
                               "/search_by_genre <النوع> - للبحث عن أفلام حسب النوع\n"
                               "/search_by_rating <التقييم> - للبحث عن أفلام بتقييم أعلى من التقييم المطلوب\n"
-                              "/recommend - للحصول على اقتراحات أفلام\n"
-                              "/challenge - للحصول على تحدي يومي\n"
-                              "/new_movies - للحصول على أحدث الأفلام\n\n"
+                              "/compare_movies <اسم الفيلم 1> <اسم الفيلم 2> - لمقارنة فيلمين\n"
+                              "/movie_ar <اسم الفيلم> - لتجربة الواقع المعزز لفيلم\n\n"
                               f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
 
-# دالة لاستخدام الذكاء الاصطناعي للاقتراحات
-def ai_movie_recommendation(update, context):
-    user_interests = "Action, Sci-Fi"  # يمكن تعديلها حسب اهتمامات المستخدم
-    movies = [
-        {'title': 'Inception', 'genre': 'Sci-Fi', 'rating': 8.8},
-        {'title': 'The Matrix', 'genre': 'Action', 'rating': 8.7},
-        {'title': 'The Dark Knight', 'genre': 'Action', 'rating': 9.0},
-        {'title': 'Forrest Gump', 'genre': 'Drama', 'rating': 8.8},
-    ]
+# دالة لمقارنة الأفلام
+def compare_movies(update, context):
+    if len(context.args) < 2:
+        update.message.reply_text("يرجى إدخال اسم فيلمين للمقارنة مثل: /compare_movies Inception Avatar")
+        return
     
-    recommended = [movie for movie in movies if movie['genre'] in user_interests]
+    movie1_title = context.args[0]
+    movie2_title = context.args[1]
     
-    if recommended:
-        movie = random.choice(recommended)
-        update.message.reply_text(f"اقترح لك الفيلم: {movie['title']} (التقييم: {movie['rating']})")
-    else:
-        update.message.reply_text("لم أتمكن من العثور على اقتراحات بناءً على اهتماماتك.")
+    url1 = f"http://www.omdbapi.com/?t={movie1_title}&apikey={OMDB_API_KEY}"
+    url2 = f"http://www.omdbapi.com/?t={movie2_title}&apikey={OMDB_API_KEY}"
+    
+    response1 = requests.get(url1).json()
+    response2 = requests.get(url2).json()
+    
+    if response1.get("Response") == "False" or response2.get("Response") == "False":
+        update.message.reply_text("لم أتمكن من العثور على أحد الأفلام، تأكد من كتابة الاسم بشكل صحيح.")
+        return
+    
+    comparison = f"**مقارنة بين {response1['Title']} و {response2['Title']}**\n\n"
+    comparison += f"*{response1['Title']}*: {response1['imdbRating']} | *{response2['Title']}*: {response2['imdbRating']}\n"
+    comparison += f"النوع: {response1['Genre']} vs {response2['Genre']}\n"
+    comparison += f"السنة: {response1['Year']} vs {response2['Year']}\n"
+    
+    update.message.reply_text(comparison)
 
-# دالة لتقديم تحدي يومي
-def daily_challenge(update, context):
-    challenge = "تحدي اليوم: شاهد فيلم أكشن وحاول الوصول إلى تقييم 8.0 أو أعلى!"
-    update.message.reply_text(challenge)
-
-# دالة لتقديم تحدي أسبوعي
-def weekly_challenge(update, context):
-    challenge = "تحدي الأسبوع: اختر 3 أفلام في نفس النوع وأرسل لنا آراءك!"
-    update.message.reply_text(challenge)
-
-# دالة لإرسال إشعار حول المحتوى الجديد
-def new_movie_notifications(update, context):
-    url = f"http://www.omdbapi.com/?s=new&apikey={OMDB_API_KEY}"
+# دالة لتفعيل تجربة AR
+def movie_ar(update, context):
+    movie_title = ' '.join(context.args)
+    
+    # استعلام OMDb للحصول على تفاصيل الفيلم
+    url = f"http://www.omdbapi.com/?t={movie_title}&apikey={OMDB_API_KEY}&plot=short"
     response = requests.get(url).json()
     
-    if response.get("Response") == "True":
-        new_movies = response.get("Search", [])
-        movie_list = "\n".join([f"{movie['Title']} ({movie['Year']})" for movie in new_movies])
-        update.message.reply_text(f"أحدث الأفلام التي تم إصدارها:\n{movie_list}")
-    else:
-        update.message.reply_text("لم يتم العثور على أفلام جديدة.")
+    if response.get("Response") == "False":
+        update.message.reply_text(f"لم أتمكن من العثور على الفيلم {movie_title}. تأكد من الاسم.")
+        return
+    
+    movie_details = f"**{response['Title']}** ({response['Year']})\n"
+    
+    # يمكن أن تكون هناك روابط AR مدمجة هنا (تخيل مثلاً منصة AR متكاملة مع API)
+    ar_link = f"https://your-ar-experience-link.com/{response['imdbID']}"  # رابط AR الخاص بالفيلم
+    
+    update.message.reply_text(f"{movie_details}\nلرؤية الفيلم باستخدام الواقع المعزز، افتح الرابط التالي:\n{ar_link}")
 
 # دالة للبحث عن الأفلام حسب النوع
 def search_by_genre(update, context):
@@ -109,6 +112,7 @@ def top_rated(update, context):
 
     if response.get("Response") == "True":
         movies = response.get("Search", [])
+        # معالجة تصنيف الأفلام أو المسلسلات حسب التقييم (بترتيب تنازلي)
         top_movies = sorted(movies, key=lambda x: float(x['imdbRating']) if x['imdbRating'] != "N/A" else 0, reverse=True)[:5]
         
         if top_movies:
@@ -160,10 +164,9 @@ def main():
     dp.add_handler(CommandHandler("top_rated", top_rated))
     dp.add_handler(CommandHandler("search_by_genre", search_by_genre))
     dp.add_handler(CommandHandler("search_by_rating", search_by_rating))
-    dp.add_handler(CommandHandler("recommend", ai_movie_recommendation))  # تعديل هنا
-    dp.add_handler(CommandHandler("challenge", daily_challenge))  # إضافة تحدي يومي
-    dp.add_handler(CommandHandler("new_movies", new_movie_notifications))  # إضافة إشعارات المحتوى الجديد
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))  # معالج الرسائل
+    dp.add_handler(CommandHandler("compare_movies", compare_movies))
+    dp.add_handler(CommandHandler("movie_ar", movie_ar))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
     updater.start_polling()
     updater.idle()
