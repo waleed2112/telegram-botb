@@ -65,4 +65,62 @@ def top_rated(update, context):
 
     if response.get("Response") == "True":
         movies = response.get("Search", [])
-        # معالجة تصنيف الأفلام أو المسلس
+        # معالجة تصنيف الأفلام أو المسلسلات حسب التقييم (بترتيب تنازلي)
+        top_movies = sorted(movies, key=lambda x: float(x['imdbRating']) if x['imdbRating'] != "N/A" else 0, reverse=True)[:5]
+        
+        if top_movies:
+            movie_list = "\n".join([f"{movie['Title']} ({movie['Year']}) - {movie['imdbRating']}" for movie in top_movies])
+            update.message.reply_text(f"أفضل الأفلام أو المسلسلات:\n{movie_list}\n\n"
+                                      f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+        else:
+            update.message.reply_text("لم أتمكن من العثور على أفضل الأفلام أو المسلسلات.\n\n"
+                                      f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+    else:
+        update.message.reply_text("لم أتمكن من العثور على أفلام أو مسلسلات بناءً على التقييم.\n\n"
+                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+
+# دالة لمعالجة الرسائل
+def handle_message(update, context):
+    title = update.message.text
+    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}&plot=full&language=en"
+    response = requests.get(url).json()
+
+    if response["Response"] == "True":
+        translated_plot = translator.translate(response["Plot"], dest='ar').text
+
+        reply = f"""
+*العنوان:* {response['Title']}
+*السنة:* {response['Year']}
+*التقييم:* {response['imdbRating']}
+*النوع:* {response['Genre']}
+*القصة:* {translated_plot}
+"""
+
+        poster_url = response.get("Poster", "")
+
+        if poster_url and poster_url != "N/A":
+            update.message.reply_photo(photo=poster_url, caption=reply, parse_mode=ParseMode.MARKDOWN)
+        else:
+            update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+
+        update.message.reply_text(f"\nلمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+    else:
+        update.message.reply_text("لم أتمكن من العثور على هذا العنوان، تأكد من كتابة الاسم بشكل صحيح.\n\n"
+                                  f"لمزيد من المعلومات يمكنك إضافة حسابي على السناب: {SNAPCHAT_LINK}")
+
+# الوظيفة الرئيسية للبوت
+def main():
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("top_rated", top_rated))
+    dp.add_handler(CommandHandler("search_by_genre", search_by_genre))
+    dp.add_handler(CommandHandler("search_by_rating", search_by_rating))
+    dp.add_handler(MessageHandler(Filters.text, handle_message))
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
